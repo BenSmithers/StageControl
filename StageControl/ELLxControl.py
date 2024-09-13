@@ -7,6 +7,8 @@ PARITY=serial.PARITY_NONE
 HANDSHAKE=False
 STOP_BIT=serial.STOPBITS_ONE
 
+from StageControl import message
+
 class ELLxConnection:
     def __ini__(self, usb_interface):
         """
@@ -47,6 +49,11 @@ class ELLxConnection:
             Returns the decoded response 
         """
         self._con.write((message+"\n").encode()) 
-        return self._con.readline().decode()
+        
+        
+    def _read_response(self):
+        raw_response = self._con.readline()
+        return message.response_handler(raw_response)
+    
     def get_device_information(self):
         pass 

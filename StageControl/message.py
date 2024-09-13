@@ -14,22 +14,33 @@ get home offset go
 from enum import Enum 
 
 
-def response_handler():
-    pass 
-
-def get_message_map()->dict:
-    pass 
-
-def all_subclasses(cls, get_names = False):
+def _all_subclasses(cls:'Response'):
     """
         Returns either a list of the names of all subclasses of `cls`, or a list of the classes themselves
     """
-    if get_names:
-        return list(set(cls.__name__ for cls in cls.__subclasses__()).union(
-            [s.__name__ for c in cls.__subclasses__() for s in all_subclasses(c)]))
+
+    return list(set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in _all_subclasses(c)]))
+
+def _get_message_map()->'dict[str,Response]':
+    all_responses = _all_subclasses(Response)
+    return {
+        entry.key:entry for entry in all_responses
+    }
+
+def response_handler(full_response:bytes):
+    """
+        First, build a map of the known responses 
+        Check this response type against the map
+        And call the relevant Response decoder
+    """
+    message_map = _get_message_map()
+    this_key = full_response[1:3].decode()
+
+    if this_key not in message_map.keys():
+        raise KeyError("Unsure how to handle key {}".format(this_key))
     else:
-        return list(set(cls.__subclasses__()).union(
-            [s for c in cls.__subclasses__() for s in all_subclasses(c)]))
+        message_map[this_key].decode(full_response)
 
 
 class DecoderType(Enum):
@@ -116,6 +127,7 @@ class Call(Message):
         str_message= ("0"+cls.key).encode()
         for i, entry in enumerate(args):
             str_message += encode(entry, cls.args[i][1], cls.args[i][0])
+        str_message+="\n".encode()
         return str_message
 
 class Response(Message):
