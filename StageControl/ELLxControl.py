@@ -2,7 +2,7 @@ import serial
 import time 
 
 BAUD = 9600
-DATABIT = 9
+DATABIT = 8
 PARITY=serial.PARITY_NONE
 HANDSHAKE=False
 STOP_BIT=serial.STOPBITS_ONE
@@ -10,7 +10,7 @@ STOP_BIT=serial.STOPBITS_ONE
 from StageControl import message
 from StageControl.utils import Status
 class ELLxConnection:
-    def __ini__(self, usb_interface, pulses_per_rev=1024):
+    def __init__(self, usb_interface, pulses_per_rev=1024):
         """
             Pass the full file path to the USB interface used to connect with the linear stage 
 
@@ -55,12 +55,12 @@ class ELLxConnection:
 
         if resp[1]=="GS":
             code = int(resp[-1])
+            this_stat = Status(code)
             if code!=0:
-                this_stat = Status(code)
                 print("Status : {}".format(this_stat))
             return this_stat 
         elif resp[1]=="PO":
-            return int(resp[-1])/self._pulses_per_rev
+            return int(resp[-1])
         elif resp[1]=="HO":
             return int(resp[-1])
         elif resp[1]=="GV":
@@ -84,7 +84,7 @@ class ELLxConnection:
     def go_home(self):
         return self._send_and_receive(message.GoHome)
     def get_position(self):
-        return self._send_and_receive(message.RequestPosition)
+        return self._send_and_receive(message.RequestPosition)/self._pulses_per_rev
     def get_info(self):
         return self._send_and_receive(message.RequestInfo)
     def move_absolute(self, distance:float):

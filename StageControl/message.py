@@ -34,20 +34,21 @@ def response_handler(full_response:bytes):
         Check this response type against the map
         And call the relevant Response decoder
     """
+    print("Received:  ", full_response.decode())
     message_map = _get_message_map()
     this_key = full_response[1:3].decode()
 
     if this_key not in message_map.keys():
         raise KeyError("Unsure how to handle key {}".format(this_key))
     else:
-        message_map[this_key].decode(full_response)
+        return message_map[this_key].decode(full_response)
+
 
 
 class DecoderType(Enum):
     Word=0
     SignedLong=1
     UnsignedLong=2 
-    HexNumber=3
 
 def _decode_word(reply:bytes)->str:
     return reply.decode()
@@ -74,10 +75,10 @@ def _decode_signed_long(reply:bytes)->int:
 def _encode_signed_long(value, nbytes)->str:
     if value <0:
         adjusted = value - int("F"*nbytes, 16)*-1 +1
-        return hex(adjusted)[2:].upper()
+        return hex(adjusted)[2:].upper().encode()
     else:
         raw_hex = hex(value)[2:].upper()
-        return ("0"*(nbytes-len(raw_hex)) + raw_hex).upper()
+        return ("0"*(nbytes-len(raw_hex)) + raw_hex).upper().encode()
 
 
 
@@ -124,11 +125,11 @@ class Call(Message):
     @classmethod 
     def encode(cls, *args):
         assert len(cls.args)==len(args)
-        str_message= ("0"+cls.key).encode()
+        bytes_msg= ("0"+cls.key).encode()
         for i, entry in enumerate(args):
-            str_message += encode(entry, cls.args[i][1], cls.args[i][0])
-        str_message+="\n".encode()
-        return str_message
+            bytes_msg += encode(entry, cls.args[i][1], cls.args[i][0])
+        bytes_msg+="\n".encode()
+        return bytes_msg
 
 class Response(Message):
     # This should be a series of length-2 lists for [byte number - decoder type]
@@ -154,7 +155,7 @@ class Response(Message):
 class GetStatus(Response):
     key = "GS"
     reply = Response.reply + [
-        2, DecoderType.Word
+        [2, DecoderType.Word]
     ]
 
 class InfoDump(Response):
@@ -177,7 +178,7 @@ class GetPosition(Response):
 class Position(Response):
     key="PO"
     reply=Response.reply+[ 
-        8, DecoderType.SignedLong
+        [8, DecoderType.SignedLong]
     ]
 class HomeOffset(Response):
     key="HO"
@@ -194,7 +195,7 @@ class JogResponse(Response):
 class VelocityResponse(Response):
     key="GV"
     reply = Response.reply+[ 
-        [2, DecoderType.HexNumber]
+        [2, DecoderType.UnsignedLong]
     ]
 
 # ======================== CALLS ===================
@@ -244,7 +245,7 @@ class GetVeolicty(Call):
 class SetVelocity(Call):
     key="sv"
     args=[
-        [2, DecoderType.HexNumber]
+        [2, DecoderType.UnsignedLong]
     ]
 class Stop(Call):
     key="st"
