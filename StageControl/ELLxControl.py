@@ -8,7 +8,7 @@ HANDSHAKE=False
 STOP_BIT=serial.STOPBITS_ONE
 
 from StageControl import message
-
+from StageControl.utils import Status
 class ELLxConnection:
     def __ini__(self, usb_interface):
         """
@@ -41,19 +41,61 @@ class ELLxConnection:
         time.sleep(0.5)
         self._con.reset_input_buffer()
 
-    def send_and_receive(self, message:str):
+    def _send_and_receive(self, this_call:message.Call, *args):
+        """
+            Encodes the a message type along with its required arguments
+
+            Then, reads the response, and returns the appriate data depending on the kind of response received
+
+        """
+        self._send(this_call.encode(*args))
+        time.sleep(1)
+        raw_response = self._con.readline()
+        resp = message.response_handler(raw_response)
+
+        if resp[1]=="GS":
+            code = int(resp[-1])
+            if code!=0:
+                this_stat = Status(code)
+                print("Status : {}".format(this_stat))
+            return this_stat 
+        elif resp[1]=="PO":
+            return int(resp[-1])/self._pulses_per_rev
+        elif resp[1]=="HO":
+            return int(resp[-1])
+        elif resp[1]=="GV":
+            return int(resp[-1])
+        elif resp[1]=="IN":
+            return resp[2:]
+
+    def _send(self, signal:bytes):
         """
             Pass un-encoded string without a linebreak 
                 ie "0in" for information 
 
             Returns the decoded response 
         """
-        self._con.write((message+"\n").encode()) 
+        self._con.write(signal + "\n".encode() ) 
         
-        
-    def _read_response(self):
-        raw_response = self._con.readline()
-        return message.response_handler(raw_response)
-    
-    def get_device_information(self):
-        pass 
+
+    """
+        Boilerplate access functions for the call/response handler
+
+
+    """
+    def go_home(self):
+        return self._send_and_receive(message.GoHome)
+    def get_position(self):
+        return self._send_and_receive(message.RequestPosition)
+    def get_info(self):
+        return self._send_and_receive(message.RequestInfo)
+    def move_absolute(self, distance:float):
+        return self._send_and_receive(message.MoveAbsolute, int(self._pulses_per_rev*distance))
+    def move_relative(self, distance:float):
+        return self._send_and_receive(message.MoveRelative, int(self._pulses_per_rev*distance))
+    def set_velocity(self, pcent:int):
+        return self._send_and_receive(message.SetVelocity, pcent)
+    def get_velocity(self):
+        return self._send_and_receive(message.GetVeolicty)
+    def stop(self):
+        return self._send_and_receive(message.Stop)
