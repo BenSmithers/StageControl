@@ -131,6 +131,7 @@ class Call(Message):
         return str_message
 
 class Response(Message):
+    # This should be a series of length-2 lists for [byte number - decoder type]
     reply=[
         [1, DecoderType.Word],
         [2, DecoderType.Word]
@@ -149,16 +150,13 @@ class Response(Message):
             response.append(decode(these, entry[1])) 
         return response
 
-class RequestStatus(Call):
-    key="gs"
+# ======================== RESPONSES ===================
 class GetStatus(Response):
     key = "GS"
     reply = Response.reply + [
         2, DecoderType.Word
     ]
 
-class RequistInfo(Call):
-    key="in"
 class InfoDump(Response):
     key="IN"
     reply = Response.reply + [
@@ -171,22 +169,6 @@ class InfoDump(Response):
         [8, DecoderType.Word], # 1 pulse per position?
     ]
 
-class Isolate(Call):
-    key="is"
-    args=[
-        [2, DecoderType.UnsignedLong]
-    ]
-
-class SetHome(Call):
-    key="so"
-    args=[
-        [8, DecoderType.SignedLong]
-    ]
-
-class GoHome(Call):
-    key = "go"
-class RequestPosition(Call):
-    key="gp"
 class GetPosition(Response):
     key = "AP"
     reply = Response.reply +[
@@ -203,24 +185,66 @@ class HomeOffset(Response):
         [8, DecoderType.SignedLong]
     ]
 
-class RequestJog(Call):
-    key="gj"
 
 class JogResponse(Response):
     key="GJ"
     reply= Response.reply+[
         [8, DecoderType.SignedLong]
     ]
+class VelocityResponse(Response):
+    key="GV"
+    reply = Response.reply+[ 
+        [2, DecoderType.HexNumber]
+    ]
 
+# ======================== CALLS ===================
+class RequestStatus(Call):
+    key="gs"
+class RequestInfo(Call):
+    key="in"
+class RequestJog(Call):
+    key="gj"
+class Isolate(Call):
+    key="is"
+    args=[
+        [2, DecoderType.UnsignedLong]
+    ]
+class SetHome(Call):
+    key="so"
+    args=[
+        [8, DecoderType.SignedLong]
+    ]
+class GoHome(Call):
+    key = "go"
+class RequestPosition(Call):
+    key="gp"
 class SetJog(Call):
     key="sj"
     args=[
         [8, DecoderType.SignedLong]
     ]
-
 class StepForward(Call):
     key="fw"
 class StepBackward(Call):
     key="bw"
+class Stop(Call):
+    key="st"
+class MoveAbsolute(Call):
+    key="ma"
+    args=[
+        [8, DecoderType.SignedLong]
+    ]
+class MoveRelative(Call):
+    key="mr"
+    args=[
+        [8, DecoderType.SignedLong]
+    ]
+class GetVeolicty(Call):
+    key="gv"
+class SetVelocity(Call):
+    key="sv"
+    args=[
+        [2, DecoderType.HexNumber]
+    ]
 class Stop(Call):
     key="st"
