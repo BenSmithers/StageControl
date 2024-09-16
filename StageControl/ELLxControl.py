@@ -10,7 +10,7 @@ STOP_BIT=serial.STOPBITS_ONE
 from StageControl import message
 from StageControl.utils import Status
 class ELLxConnection:
-    def __ini__(self, usb_interface):
+    def __ini__(self, usb_interface, pulses_per_rev=1024):
         """
             Pass the full file path to the USB interface used to connect with the linear stage 
 
@@ -21,7 +21,7 @@ class ELLxConnection:
             no flow control 
         """
         self._con = serial.Serial(usb_interface, baudrate=BAUD, parity=PARITY, bytesize=DATABIT, stopbits=STOP_BIT)
-        self._pulses_per_rev = 1024 # from datasheet 
+        self._pulses_per_rev = pulses_per_rev
 
         # The Thorlabs protocol description recommends toggeling the RTS pin and resetting the
         # input and output buffer. This makes sense, since the internal controller of the Thorlabs
@@ -80,8 +80,6 @@ class ELLxConnection:
 
     """
         Boilerplate access functions for the call/response handler
-
-
     """
     def go_home(self):
         return self._send_and_receive(message.GoHome)
