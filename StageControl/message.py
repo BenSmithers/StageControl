@@ -1,19 +1,19 @@
 # data are in ascii format and in hexadecimal notation 
 
-"""
-req status gs
-ho home 
-get position po  or gp 
-move absolute ma
-moverelative mr 
-set home offset so
-get home offset go 
 
-
-"""
 from enum import Enum 
 
 
+"""
+    Each call has, in the documentation for the ELLx board, a set of expected Responses. 
+
+    Each of those responses has been implemented below with the associated "key" that will be present in the response header. 
+    Here, we present the code to tabulate all known response keys. 
+    Then, when a response is received, the second two bytes are compared against the known keys.
+    The proper Response decoder is called, and the decoded quantities are returned. 
+
+    If the key matches no known decoder, a KeyError is thrown.
+"""
 def _all_subclasses(cls:'Response'):
     """
         Returns either a list of the names of all subclasses of `cls`, or a list of the classes themselves
@@ -21,13 +21,11 @@ def _all_subclasses(cls:'Response'):
 
     return list(set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in _all_subclasses(c)]))
-
 def _get_message_map()->'dict[str,Response]':
     all_responses = _all_subclasses(Response)
     return {
         entry.key:entry for entry in all_responses
     }
-
 def response_handler(full_response:bytes):
     """
         First, build a map of the known responses 
@@ -103,6 +101,10 @@ def decode(sub_val:bytes, dt:DecoderType):
         raise NotImplementedError("Unknown decoder type: {}".format(dt))
 
 def encode(sub_val, dt:DecoderType, nbytes=-1)->str:
+    """
+        Encode data according to a schema identified by DecoderType. 
+        Functions as the inverse of the `decode` method
+    """
     print(sub_val, dt, nbytes)
     if dt.value == DecoderType.Word.value:
         return _encode_word(sub_val)
@@ -114,13 +116,27 @@ def encode(sub_val, dt:DecoderType, nbytes=-1)->str:
         raise NotImplementedError("Unknown decoder type: {}".format(dt))  
 
 class Message:
+    """
+        This is the fundamental class for all of the messages sent to or received from the board. 
+
+        There is a symmetry presented where each message to the ELLx board is a Call
+        Then, it responds, and the Response decoders parse the messages.
+    """
     key="XX"
     def __init__(self, *args):
         self._args = args
 
 class Call(Message):
-    args = [
-    ] 
+    """
+        The `Call` class represents a call _to_ the ELLx board. 
+        This is a request for information, or an instruction to move. 
+
+        All Calls follow the same encoding procedure. 
+        The encoding method expets a number of arguments consistent with the class. 
+
+        The `key` now represents the key the board expects for this specific call. IE `sv` for Set Velocity. 
+    """
+    args = [] 
 
     @classmethod 
     def encode(cls, *args):
@@ -132,6 +148,18 @@ class Call(Message):
         return bytes_msg
 
 class Response(Message):
+    """
+        This class represents the decoder. 
+        the `key` now represents the response key that this corresponds to. 
+
+        A `reply` attribute is included as a list of length-2 lists specifiying how the data are formatted in the response. 
+        The pre-provided ones here represents the 
+                1 - byte representing the associated board.
+                2 - two bytes representing the response key
+
+        Subclasses of Response increase the number of entries for each separate quantity provided in the response data packet. 
+        The most extreme example is the InfoDump, with 33 bytes of data
+    """
     # This should be a series of length-2 lists for [byte number - decoder type]
     reply=[
         [1, DecoderType.Word],
