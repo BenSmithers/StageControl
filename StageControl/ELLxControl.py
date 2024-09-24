@@ -53,20 +53,28 @@ class ELLxConnection:
         raw_response = self._con.readline()
         resp = message.response_handler(raw_response)
 
+        data = {
+            "call":this_call.encode(*args),
+            "response":raw_response.decode(),
+            "data":resp
+        }
+
         if resp[1]=="GS":
             code = int(resp[-1])
             this_stat = Status(code)
             if code!=0:
                 print("Status : {}".format(this_stat))
-            return this_stat 
+            data["data"]= this_stat 
         elif resp[1]=="PO":
-            return int(resp[-1])
+            data["data"]= int(resp[-1])
         elif resp[1]=="HO":
-            return int(resp[-1])
+            data["data"]= int(resp[-1])
         elif resp[1]=="GV":
-            return int(resp[-1])
+            data["data"]= int(resp[-1])
         elif resp[1]=="IN":
-            return resp[2:]
+            data["data"]= resp[2:]
+
+        return data
 
     def _send(self, signal:bytes):
         """
