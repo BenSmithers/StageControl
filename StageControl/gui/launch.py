@@ -1,14 +1,15 @@
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QDialog
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QDialog, QFileDialog
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtGui, QtCore
 import sys 
-from form import Ui_MainWindow as gui
+from mainwindow import Ui_MainWindow as gui
 
 
 from StageControl import message
 from StageControl.utils import Status
 from StageControl.ELLxControl import ELLxConnection
+import os 
 
 # self.parent.scene.get_system(hid)
 class main_window(QMainWindow):
@@ -18,18 +19,27 @@ class main_window(QMainWindow):
         self.ui = gui()
         self.ui.setupUi(self)
 
-        self.ui.pushButton_3.clicked.connect(self.insert_text)
+        self.ui.filepathEdit.doubleClicked.connect(self.declick)
+        self.ui.filepathEdit.clicked.connect(self.declick)
+    
+    def declick(self):
+        print("Double click")
+        pathto = QFileDialog.getOpenFileName(None, 'Open File',os.path.join(os.path.dirname(__file__), ".."), 'csv (*.csv)')[0]
+        if pathto is not None:
+            if pathto!="":
+                self.ui.filepathEdit.setText(pathto)
+                self.ui.plot_widg.update_filepath(pathto)
 
     def keyPressEvent(self, e):
         if e.key()==Qt.EnterKeyType.EnterKeyReturn or e.key()==16777220:
             self.insert_text()
 
     def insert_text(self):
-        what = self.ui.lineEdit.text()
+        what = self.ui.control_widget.ui.lineEdit.text()
         if what=="":
             return 
-        self.ui.lineEdit.clear()
-        self.ui.scrollArea.insertPlainText(what + "\n")
+        self.ui.control_widget.ui.lineEdit.clear()
+        self.ui.control_widget.ui.textBrowser.insertPlainText(what + "\n")
 
     def move_absolute(self):
         pass
