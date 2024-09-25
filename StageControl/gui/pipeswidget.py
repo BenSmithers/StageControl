@@ -85,9 +85,10 @@ class PipesWidget(QtWidgets.QWidget):
 
         if any(self._alarm):
             self.alarm_timer.start(250)
+        else:
+            self.alarm_timer.stop()
 
-    def update(self):
-
+    def _generate_testdata(self):
         flows = np.array([
             0,0,0,0,0
         ])
@@ -109,14 +110,29 @@ class PipesWidget(QtWidgets.QWidget):
                     flows[2] = 1 
                     self._fake_chamber = 50
 
-        
-
         if self._fake_chamber<0:
             self._fake_chamber = 0
 
 
-        flows = flows.astype(int)*90 + 5
+        flows = flows.astype(int)*90 + 5 
+        pressures = 20 + np.random.randn(4)*3
+        scales = np.array([30, 5, -5, -10])
+        if not self.ui.sv1_button.isChecked():
+            pressures*=0
+            scales*=0
+        if full:
+            pressures[0] *= 20
+
+        pressures = pressures + scales
+
+        temperatures = np.zeros(6)
+
+        return pressures, flows
+
+    def update(self):
+
         
+        pressures, flows = self._generate_testdata()
 
         self.ui.flow1.setValue(flows[0])
         self.ui.flow2.setValue(flows[1])
@@ -124,23 +140,16 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.flow4.setValue(flows[3])
         self.ui.flow5.setValue(flows[4])
 
-        pressures = 20 + np.random.randn(4)*3
-        scales = np.array([40, 5, -5, -10])
-        if not self.ui.sv1_button.isChecked():
-            pressures*=0
-            scales*=0
-        if full:
-            pressures[0] *= 20
+
 
         self._alarm = pressures>60
-        print(self._alarm)
 
         self.ui.lcdNumber.setStyleSheet
 
-        self.ui.lcdNumber.setText("{:.2f}".format(pressures[0]+scales[0]))
-        self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]+scales[1]))
-        self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]+scales[2]))
-        self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3]+scales[3]))
+        self.ui.lcdNumber.setText("{:.2f}".format(pressures[0]))
+        self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]))
+        self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]))
+        self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3]))
 
         self.timer.start(2500)
 
