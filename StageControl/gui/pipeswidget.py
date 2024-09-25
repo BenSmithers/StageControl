@@ -1,0 +1,178 @@
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView 
+from PyQt5 import QtWidgets, QtGui, QtCore
+
+from pipes_gui import Ui_Form as gui
+import numpy as np 
+
+from PyQt5.QtCore import QPointF
+from PyQt5.QtGui import QPolygonF, QColor
+
+SCALE = 5.0
+
+
+class Box(QPolygonF):
+    def __init__(self, center:QPointF):
+        points = [
+            QPointF( center.x()-SCALE , center.y()-SCALE),
+            QPointF( center.x()-SCALE , center.y()+SCALE),
+            QPointF( center.x()+SCALE , center.y()+SCALE),
+            QPointF( center.x()+SCALE , center.y()-SCALE),
+        ]
+        super().__init__(points)
+
+class Diamond(QPolygonF):
+    def __init__(self, center:QPointF):
+        points = [
+            QPointF( center.x()-SCALE , center.y()),
+            QPointF( center.x() , center.y()+SCALE),
+            QPointF( center.x()+SCALE , center.y()),
+            QPointF( center.x() , center.y()-SCALE)
+        ]
+        super().__init__(points)
+
+
+class Clicker(QGraphicsScene):
+    def __init__(self, parent:QGraphicsView, parent_window):
+        QGraphicsScene.__init__(self, parent)
+        self.parent = parent 
+        self._parent_window = parent_window
+
+
+class PipesWidget(QtWidgets.QWidget):    
+    def __init__(self, parent:QWidget):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.ui = gui()
+        self.ui.setupUi(self)
+
+        self.scene = Clicker(self.ui.graphicsView, self)
+        self.ui.graphicsView.setScene(self.scene)
+        self.ui.graphicsView.setMouseTracking(True)
+    
+        self.ui.bv1_button.stateChanged.connect(self.bv1_change)
+        self.ui.bv2_button.stateChanged.connect(self.bv2_change)
+        self.ui.bv3_button.stateChanged.connect(self.bv3_change)
+        self.ui.bv4_button.stateChanged.connect(self.bv4_change)
+        self.ui.bv5_button.stateChanged.connect(self.bv5_change)
+        self.ui.bv6_button.stateChanged.connect(self.bv6_change)
+        
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update)
+
+        self.alarm_timer = QtCore.QTimer(self)
+        self.alarm_timer.timeout.connect(self.flash)
+
+        self._fake_chamber = 0
+        self.update()
+
+        self._flash_red = True
+        self._alarm = np.array([False, False, False, False])
+
+    def flash(self):
+        if any(self._alarm):
+            if self._flash_red:
+                self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,0,0)")
+                self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,0,0)")
+                self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,0,0)")
+                self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,0,0)") 
+                self._flash_red = False 
+            else:
+                self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
+                self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
+                self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
+                self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
+                self._flash_red = True
+
+        if any(self._alarm):
+            self.alarm_timer.start(250)
+
+    def update(self):
+
+        flows = np.array([
+            0,0,0,0,0
+        ])
+        full = False
+        if self.ui.pu2_button.isChecked():
+            if self._fake_chamber>0:
+                flows[3] = 1
+                flows[4] = 1
+            self._fake_chamber -= 10
+            
+        if self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked():
+            flows[0] = 1
+            flows[4] = 1 
+            if self.ui.bv6_button.isChecked():
+                flows[1] = 1 
+                self._fake_chamber += 10 
+                if self._fake_chamber > 50:
+                    full = True 
+                    flows[2] = 1 
+                    self._fake_chamber = 50
+
+        
+
+        if self._fake_chamber<0:
+            self._fake_chamber = 0
+
+
+        flows = flows.astype(int)*90 + 5
+        
+
+        self.ui.flow1.setValue(flows[0])
+        self.ui.flow2.setValue(flows[1])
+        self.ui.flow3.setValue(flows[2])
+        self.ui.flow4.setValue(flows[3])
+        self.ui.flow5.setValue(flows[4])
+
+        pressures = 20 + np.random.randn(4)*3
+        scales = np.array([40, 5, -5, -10])
+        if not self.ui.sv1_button.isChecked():
+            pressures*=0
+            scales*=0
+        if full:
+            pressures[0] *= 20
+
+        self._alarm = pressures>60
+        print(self._alarm)
+
+        self.ui.lcdNumber.setStyleSheet
+
+        self.ui.lcdNumber.setText("{:.2f}".format(pressures[0]+scales[0]))
+        self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]+scales[1]))
+        self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]+scales[2]))
+        self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3]+scales[3]))
+
+        self.timer.start(2500)
+
+        if any(self._alarm):
+            self.alarm_timer.start(250)
+        else:
+            self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
+
+    def bv1_change(self):
+        pass 
+    def bv2_change(self):
+        pass 
+    def bv3_change(self):
+        pass 
+    def bv4_change(self):
+        pass 
+    def bv5_change(self):
+        pass 
+    def bv6_change(self):
+        pass 
+
+    def sv1_change(self):
+        pass 
+    def sv2_change(self):
+        pass 
+
+    def pu1_change(self):
+        pass 
+    def pu2_change(self):
+        pass 
+    def pu3_change(self):
+        pass 

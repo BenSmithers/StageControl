@@ -13,6 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from plot_widget import PlotsWidget 
 from control_widget import ControlWidget
+from pipeswidget import PipesWidget
 
 class LineEdit(QtWidgets.QLineEdit):
     doubleClicked = QtCore.pyqtSignal()
@@ -54,11 +55,17 @@ class Ui_MainWindow(object):
         self.plot_widg = PlotsWidget(self.plotTab)
         self.plot_widg.setObjectName("widget_inst")
 
+
+
+
+
         self.verticalLayout_3.addWidget(self.plot_widg)
         self.filepathEdit = LineEdit(self.plotTab)
         self.filepathEdit.setObjectName("filepathEdit")
         self.verticalLayout_3.addWidget(self.filepathEdit)
         self.tabWidget.addTab(self.plotTab, "")
+        self.pipes = PipesWidget(self.centralwidget)
+        self.tabWidget.addTab(self.pipes, "Pump Operations")
         self.verticalLayout.addWidget(self.tabWidget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
