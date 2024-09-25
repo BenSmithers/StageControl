@@ -55,6 +55,18 @@ class Ui_Form(object):
         self.spinBox.setObjectName("spinBox")
         self.verticalLayout.addWidget(self.spinBox)
 
+        self.pvalLayout = QtWidgets.QHBoxLayout()
+        self.pvalLayout.setObjectName("pvalLayout")
+        self.pval_lbl = QtWidgets.QLabel()
+        self.pval_lbl.setText("Fit p-value: ")
+        self.pval_lbl.setObjectName("pbal_lbl")
+        self.pvalLayout.addWidget(self.pval_lbl)
+        self.pval_value = QtWidgets.QLabel()
+        self.pval_value.setText("nan")
+        self.pval_value.setObjectName("pval_value")
+        self.pvalLayout.addWidget(self.pval_value)
+        self.verticalLayout.addLayout(self.pvalLayout)
+
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.mintime = QtWidgets.QDoubleSpinBox(Form)
@@ -72,6 +84,7 @@ class Ui_Form(object):
         self.maxtime.setObjectName("maxtime")
         self.horizontalLayout_2.addWidget(self.maxtime)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
+
 
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
