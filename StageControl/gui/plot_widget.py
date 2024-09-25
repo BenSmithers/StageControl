@@ -13,7 +13,12 @@ class PlotsWidget(QtWidgets.QWidget):
         self.ui = gui()
         self.ui.setupUi(self)
 
-        self._filepath = ""
+        self._filepath = "/Users/bsmithers/software/PicoCode/ratio_data_osmosis.csv"
+        
+        self.ui.monitorBox.setChecked(True)
+        self.ui.receiverBox.setChecked(True)
+        self.ui.ratioBox.setChecked(True)
+        self.update_plots()
 
         self.ui.monitorBox.stateChanged.connect(self.update_plots)
         self.ui.ratioBox.stateChanged.connect(self.update_plots)

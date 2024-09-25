@@ -19,8 +19,10 @@ class main_window(QMainWindow):
         self.ui = gui()
         self.ui.setupUi(self)
 
+        self.ui.filepathEdit.setText("/Users/bsmithers/software/PicoCode/ratio_data_osmosis.csv")
         self.ui.filepathEdit.doubleClicked.connect(self.declick)
         self.ui.filepathEdit.clicked.connect(self.declick)
+        
     
     def declick(self):
         print("Double click")
