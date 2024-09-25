@@ -32,7 +32,6 @@ def response_handler(full_response:bytes):
         Check this response type against the map
         And call the relevant Response decoder
     """
-    print("Received:  ", full_response.decode())
     message_map = _get_message_map()
     this_key = full_response[1:3].decode()
 
@@ -105,7 +104,6 @@ def encode(sub_val, dt:DecoderType, nbytes=-1)->str:
         Encode data according to a schema identified by DecoderType. 
         Functions as the inverse of the `decode` method
     """
-    print(sub_val, dt, nbytes)
     if dt.value == DecoderType.Word.value:
         return _encode_word(sub_val)
     elif dt.value == DecoderType.UnsignedLong.value:
