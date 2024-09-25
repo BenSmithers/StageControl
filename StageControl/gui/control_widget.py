@@ -19,7 +19,7 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.waveCombo.currentIndexChanged.connect(self.wave_combo_change)
 
         self._led_locations = [
-            0 + 2*i for i in range(7)
+            2*i for i in range(7)
         ]
         self._led_locations.append(1)
         self._led_locations.append(7)
@@ -41,14 +41,14 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.textBrowser.insertPlainText(msg)
 
     def wave_combo_change(self):
-        index_no = self.ui.waveCombo.currentIndex()+1
+        index_no = self.ui.waveCombo.currentIndex()
         position = self._led_locations[index_no]
         self.ui.positionSpin.setValue(position)
     def go_wavelen(self):
-        index_no = self.ui.waveCombo.currentIndex()+1
+        index_no = self.ui.waveCombo.currentIndex()
         position = self._led_locations[index_no]
 
-        msg=self._board.activate_led(index_no)
+        msg=self._board.activate_led(index_no+1)
         self.ui.textBrowser.insertPlainText(msg)
         self.set_position(position) 
         
