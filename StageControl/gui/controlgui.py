@@ -75,6 +75,14 @@ class Ui_Widget(object):
         self.positionLbl.setFrameShadow(QtWidgets.QFrame.Raised)
         self.positionLbl.setObjectName("positionLbl")
         self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.positionLbl)
+
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout.setItem(5,  QtWidgets.QFormLayout.FieldRole, spacerItem)
+
+        self.test_email = QtWidgets.QPushButton(Widget)
+        self.test_email.setObjectName("test_email")
+        self.formLayout.setWidget(6, QtWidgets.QFormLayout.SpanningRole, self.test_email)
+
         self.horizontalLayout.addLayout(self.formLayout)
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
@@ -115,3 +123,4 @@ class Ui_Widget(object):
         self.label.setText(_translate("Widget", "Location:"))
         self.positionLbl.setText(_translate("Widget", "0.00 mm"))
         self.insertButton.setText(_translate("Widget", "Insert"))
+        self.test_email.setText(_translate("Widget", "Test Alert Email"))

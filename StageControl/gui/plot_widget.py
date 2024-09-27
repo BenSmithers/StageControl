@@ -10,10 +10,12 @@ from scipy import stats
 from plotgui import Ui_Form as gui 
 
 class PlotsWidget(QtWidgets.QWidget):
-    def __init__(self, parent:QWidget):
+    def __init__(self, parent:QWidget, logger:QtWidgets.QTextBrowser):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = gui()
         self.ui.setupUi(self)
+
+        self._logger = logger
 
         self._filepath = "/Users/bsmithers/software/PicoCode/ratio_data_osmosis.csv"
         

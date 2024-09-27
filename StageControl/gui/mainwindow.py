@@ -52,7 +52,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.setObjectName("verticalLayout_3")
 
 
-        self.plot_widg = PlotsWidget(self.plotTab)
+        self.plot_widg = PlotsWidget(self.plotTab, self.control_widget.ui.textBrowser)
         self.plot_widg.setObjectName("widget_inst")
 
 
@@ -64,7 +64,7 @@ class Ui_MainWindow(object):
         self.filepathEdit.setObjectName("filepathEdit")
         self.verticalLayout_3.addWidget(self.filepathEdit)
         self.tabWidget.addTab(self.plotTab, "")
-        self.pipes = PipesWidget(self.centralwidget)
+        self.pipes = PipesWidget(self.centralwidget,self.control_widget.ui.textBrowser)
         self.tabWidget.addTab(self.pipes, "Pump Operations")
         self.verticalLayout.addWidget(self.tabWidget)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -77,7 +77,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

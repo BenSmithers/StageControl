@@ -1,10 +1,11 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import  QWidget
 
 from StageControl.ELLxControl import ELLxConnection
 from StageControl.LEDControl import LEDBoard
 from controlgui import Ui_Widget as gui 
 
+from emailer import send_alert
 
 class ControlWidget(QtWidgets.QWidget):
     def __init__(self, parent:QWidget):
@@ -17,6 +18,7 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.adc_spin.valueChanged.connect(self.set_adc)
         self.ui.rate_combo.currentIndexChanged.connect(self.set_freq)
         self.ui.waveCombo.currentIndexChanged.connect(self.wave_combo_change)
+        self.ui.test_email.clicked.connect(self.test_email)
 
         self._led_locations = [
             2*i for i in range(7)
@@ -27,6 +29,17 @@ class ControlWidget(QtWidgets.QWidget):
         self._conn = ELLxConnection("", fake=True)
         self._board = LEDBoard("", fake=True)
         self._board.enable()
+
+        self._button_timer =  QtCore.QTimer(self)
+        self._button_timer.timeout.connect(self._enable_button)
+
+    def _enable_button(self):
+        self._button_timer.stop()
+        self.ui.test_email.setEnabled(True)
+    def test_email(self):
+        send_alert("This is just a test, and you received it!", "Success!")
+        self.ui.test_email.setEnabled(False)
+        self._button_timer.start(10000)
 
     def set_freq(self):
         if self.ui.rate_combo.currentIndex()==0:

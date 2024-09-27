@@ -7,6 +7,9 @@ import numpy as np
 
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPolygonF, QColor
+from PyQt5 import QtMultimedia
+from emailer import send_alert
+import os 
 
 SCALE = 5.0
 
@@ -40,14 +43,17 @@ class Clicker(QGraphicsScene):
 
 
 class PipesWidget(QtWidgets.QWidget):    
-    def __init__(self, parent:QWidget):
+    def __init__(self, parent:QWidget,  logger:QtWidgets.QTextBrowser):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = gui()
         self.ui.setupUi(self)
+        self._logger = logger
 
         self.scene = Clicker(self.ui.graphicsView, self)
         self.ui.graphicsView.setScene(self.scene)
         self.ui.graphicsView.setMouseTracking(True)
+
+        self.scene.addPixmap(QtGui.QPixmap(os.path.join(os.path.dirname(__file__), "data","diagram.jpg")) ).setScale(0.25)
     
         self.ui.bv1_button.stateChanged.connect(self.bv1_change)
         self.ui.bv2_button.stateChanged.connect(self.bv2_change)
@@ -55,6 +61,11 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.bv4_button.stateChanged.connect(self.bv4_change)
         self.ui.bv5_button.stateChanged.connect(self.bv5_change)
         self.ui.bv6_button.stateChanged.connect(self.bv6_change)
+        self.ui.sv1_button.stateChanged.connect(self.sv1_change)
+        self.ui.sv2_button.stateChanged.connect(self.sv2_change)
+        self.ui.pu1_button.stateChanged.connect(self.pu1_change)
+        self.ui.pu2_button.stateChanged.connect(self.pu2_change)
+        self.ui.pu3_button.stateChanged.connect(self.pu3_change)
         
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
@@ -63,10 +74,15 @@ class PipesWidget(QtWidgets.QWidget):
         self.alarm_timer.timeout.connect(self.flash)
 
         self._fake_chamber = 0
+        self._fake_open_tank = 0
         self.update()
 
         self._flash_red = True
         self._alarm = np.array([False, False, False, False])
+
+        sound_file = os.path.join(os.path.dirname(__file__), "data","alarm.mp3")
+
+        self._alert_thrown = False 
 
     def flash(self):
         if any(self._alarm):
@@ -109,6 +125,8 @@ class PipesWidget(QtWidgets.QWidget):
                     full = True 
                     flows[2] = 1 
                     self._fake_chamber = 50
+                if not full:
+                    flows[4] = 0
 
         if self._fake_chamber<0:
             self._fake_chamber = 0
@@ -154,34 +172,41 @@ class PipesWidget(QtWidgets.QWidget):
         self.timer.start(2500)
 
         if any(self._alarm):
-            self.alarm_timer.start(250)
+            if self._alert_thrown:
+                pass 
+            else:
+                self._alert_thrown = True 
+                send_alert( "The water pressure is dangerously high!")
+                self.alarm_timer.start(250)
         else:
+            self._alert_thrown = False 
+            self.alarm_timer.stop()
             self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
             self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
             self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
             self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
 
     def bv1_change(self):
-        pass 
+        self._logger.insertPlainText("bv1 {}\n".format("on" if self.ui.bv1_button.isChecked() else "off")) 
     def bv2_change(self):
-        pass 
+        self._logger.insertPlainText("bv2 {}\n".format("on" if self.ui.bv2_button.isChecked() else "off")) 
     def bv3_change(self):
-        pass 
+        self._logger.insertPlainText("bv3 {}\n".format("on" if self.ui.bv3_button.isChecked() else "off")) 
     def bv4_change(self):
-        pass 
+        self._logger.insertPlainText("bv4 {}\n".format("on" if self.ui.bv4_button.isChecked() else "off")) 
     def bv5_change(self):
-        pass 
+        self._logger.insertPlainText("bv5 {}\n".format("on" if self.ui.bv5_button.isChecked() else "off")) 
     def bv6_change(self):
-        pass 
+        self._logger.insertPlainText("bv6 {}\n".format("on" if self.ui.bv6_button.isChecked() else "off")) 
 
     def sv1_change(self):
-        pass 
+        self._logger.insertPlainText("sv1 {}\n".format("on" if self.ui.sv1_button.isChecked() else "off")) 
     def sv2_change(self):
-        pass 
+        self._logger.insertPlainText("sv2 {}\n".format("on" if self.ui.sv2_button.isChecked() else "off")) 
 
     def pu1_change(self):
-        pass 
+        self._logger.insertPlainText("pu1 {}\n".format("on" if self.ui.pu1_button.isChecked() else "off")) 
     def pu2_change(self):
-        pass 
+        self._logger.insertPlainText("pu2 {}\n".format("on" if self.ui.pu2_button.isChecked() else "off"))  
     def pu3_change(self):
-        pass 
+        self._logger.insertPlainText("pu3 {}\n".format("on" if self.ui.pu3_button.isChecked() else "off"))  
