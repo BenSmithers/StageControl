@@ -19,9 +19,35 @@ class Ui_Form(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
+
+        spacerItem0 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem0)
+
+        self.drain_button = QtWidgets.QPushButton(Form)
+        self.drain_button.setText("Drain Chamber")
+        self.verticalLayout.addWidget(self.drain_button)
+
+        self.fill_filter = QtWidgets.QPushButton(Form)
+        self.fill_filter.setText("Fill with Filtered")
+        self.verticalLayout.addWidget(self.fill_filter)
+
+        self.fill_osmosis = QtWidgets.QPushButton(Form)
+        self.fill_osmosis.setText("Fill with Osmosis")
+        self.verticalLayout.addWidget(self.fill_osmosis)
+        
+        self.status_label = QtWidgets.QLabel(Form)
+        self.status_label.setObjectName("status_label")
+        self.status_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.status_label.setText("... Awaiting Input")
+        self.verticalLayout.addWidget(self.status_label)
+
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem)
+
         self.label = QtWidgets.QLabel(Form)
         self.label.setObjectName("label")
         self.verticalLayout.addWidget(self.label)
+
         self.bv1_button = QtWidgets.QCheckBox(Form)
         self.bv1_button.setObjectName("bv1_button")
         self.verticalLayout.addWidget(self.bv1_button)
@@ -40,8 +66,7 @@ class Ui_Form(object):
         self.bv6_button = QtWidgets.QCheckBox(Form)
         self.bv6_button.setObjectName("bv6_button")
         self.verticalLayout.addWidget(self.bv6_button)
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout.addItem(spacerItem)
+
         self.label_2 = QtWidgets.QLabel(Form)
         self.label_2.setObjectName("label_2")
         self.verticalLayout.addWidget(self.label_2)
@@ -51,8 +76,7 @@ class Ui_Form(object):
         self.sv2_button = QtWidgets.QCheckBox(Form)
         self.sv2_button.setObjectName("sv2_button")
         self.verticalLayout.addWidget(self.sv2_button)
-        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout.addItem(spacerItem1)
+
         self.label_3 = QtWidgets.QLabel(Form)
         self.label_3.setObjectName("label_3")
         self.verticalLayout.addWidget(self.label_3)
@@ -65,8 +89,12 @@ class Ui_Form(object):
         self.pu3_button = QtWidgets.QCheckBox(Form)
         self.pu3_button.setObjectName("pu3_button")
         self.verticalLayout.addWidget(self.pu3_button)
-        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout.addItem(spacerItem2)
+
+        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem1)
+
+        
+
         self.horizontalLayout.addLayout(self.verticalLayout)
         self.graphicsView = QtWidgets.QGraphicsView(Form)
         self.graphicsView.setMinimumSize(QtCore.QSize(600, 0))
