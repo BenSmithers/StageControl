@@ -13,12 +13,13 @@ import os
 
 # self.parent.scene.get_system(hid)
 class main_window(QMainWindow):
-    def __init__(self,parent=None):
+    def __init__(self,parent=None, fake=False):
         QWidget.__init__(self, parent)
 
         self.ui = gui()
-        self.ui.setupUi(self)
+        self.ui.setupUi(self, fake=fake)
 
+        self.setWindowTitle("WCTE Water Control System")
         self.ui.filepathEdit.setText("/Users/bsmithers/software/PicoCode/ratio_data_osmosis.csv")
         self.ui.filepathEdit.doubleClicked.connect(self.declick)
         self.ui.filepathEdit.clicked.connect(self.declick)
@@ -41,13 +42,18 @@ class main_window(QMainWindow):
         if what=="":
             return 
         self.ui.control_widget.ui.lineEdit.clear()
-        self.ui.control_widget.ui.textBrowser.insertPlainText(what + "\n")
+        self.ui.control_widget.insert_text(what + "\n")
 
     def move_absolute(self):
         pass
 
+
+import sys 
+fake = False
+if len(sys.argv)>1:
+    fake = sys.argv[1]=="fake"
 app = QApplication(sys.argv)
-app_instance = main_window()
+app_instance = main_window(fake=fake)
 
 if __name__=="__main__":
     # make sure the base saves folder exists 

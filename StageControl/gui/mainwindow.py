@@ -27,7 +27,7 @@ class LineEdit(QtWidgets.QLineEdit):
         return super().event(event)
 
 class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
+    def setupUi(self, MainWindow, fake=False):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -41,7 +41,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.controlTab)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
 
-        self.control_widget = ControlWidget(self.controlTab)
+        self.control_widget = ControlWidget(self.controlTab, fake=fake)
         self.control_widget.setObjectName("controlinst")
 
         self.verticalLayout_2.addWidget(self.control_widget)
@@ -52,7 +52,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.setObjectName("verticalLayout_3")
 
 
-        self.plot_widg = PlotsWidget(self.plotTab, self.control_widget.ui.textBrowser)
+        self.plot_widg = PlotsWidget(self.plotTab, self.control_widget)
         self.plot_widg.setObjectName("widget_inst")
 
 
@@ -64,7 +64,7 @@ class Ui_MainWindow(object):
         self.filepathEdit.setObjectName("filepathEdit")
         self.verticalLayout_3.addWidget(self.filepathEdit)
         self.tabWidget.addTab(self.plotTab, "")
-        self.pipes = PipesWidget(self.centralwidget,self.control_widget.ui.textBrowser)
+        self.pipes = PipesWidget(self.centralwidget,self.control_widget)
         self.tabWidget.addTab(self.pipes, "Pump Operations")
         self.verticalLayout.addWidget(self.tabWidget)
         MainWindow.setCentralWidget(self.centralwidget)

@@ -1,16 +1,20 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import  QWidget
 import sys 
+import os 
+
 from StageControl.ELLxControl import ELLxConnection
 from StageControl.LEDControl import LEDBoard
 from controlgui import Ui_Widget as gui 
 
+from datetime import datetime 
+
 from emailer import send_alert
 
-from warn_widg import WarnWidget
+from warn_widg import WarnWidget, HelpWidget
 
 class ControlWidget(QtWidgets.QWidget):
-    def __init__(self, parent:QWidget):
+    def __init__(self, parent:QWidget, fake=False):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = gui()
         self.ui.setupUi(self)
@@ -22,6 +26,8 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.waveCombo.currentIndexChanged.connect(self.wave_combo_change)
         self.ui.test_email.clicked.connect(self.test_email)
 
+        self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
+
         self._led_locations = [
             2*i for i in range(7)
         ]
@@ -30,7 +36,7 @@ class ControlWidget(QtWidgets.QWidget):
 
         failure = False 
         try:
-            self._conn = ELLxConnection("", fake=False)
+            self._conn = ELLxConnection("", fake=fake)
         except Exception as e:
             self.dialog = WarnWidget(parent=self,message="Critical Error! {}".format(e))
             self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -40,7 +46,7 @@ class ControlWidget(QtWidgets.QWidget):
             failure = True 
 
         try:
-            self._board = LEDBoard("", fake=True)
+            self._board = LEDBoard("", fake=fake)
             self._board.enable()
 
             self._button_timer =  QtCore.QTimer(self)
@@ -54,9 +60,21 @@ class ControlWidget(QtWidgets.QWidget):
 
         if failure:
             sys.exit(1)    
+        self.insert_text("Initialized GUI\n")
+
+    def insert_text(self, msg):
+        now = datetime.now()
+        data = open(self._logfile, 'a+')
+        data.write("{} : {}".format(now, msg))
+        data.close()
+        self.ui.textBrowser.insertPlainText("{} : {}".format(now, msg))
+
 
     def help(self):
-        print("Pressed help!")
+        self.dialog = HelpWidget(parent=self,message="For help, please contact the expert on shift")
+        self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.dialog.ui.buttonBox.helpRequested.connect(self.help)
+        self.dialog.exec_() 
 
     def _enable_button(self):
         self._button_timer.stop()
@@ -71,12 +89,12 @@ class ControlWidget(QtWidgets.QWidget):
             msg=self._board.set_slow_rate()
         else:
             msg=self._board.set_fast_rate()
-        self.ui.textBrowser.insertPlainText(msg)
+        self.insert_text(msg)
 
     def set_adc(self):
         new_value = self.ui.adc_spin.value()
         msg= self._board.set_adc(new_value)
-        self.ui.textBrowser.insertPlainText(msg)
+        self.insert_text(msg)
 
     def wave_combo_change(self):
         index_no = self.ui.waveCombo.currentIndex()
@@ -87,7 +105,7 @@ class ControlWidget(QtWidgets.QWidget):
         position = self._led_locations[index_no]
 
         msg=self._board.activate_led(index_no+1)
-        self.ui.textBrowser.insertPlainText(msg)
+        self.insert_text(msg)
         self.set_position(position) 
         
 
@@ -100,11 +118,11 @@ class ControlWidget(QtWidgets.QWidget):
 
         packet = self._conn.move_absolute(position)
 
-        self.ui.textBrowser.insertPlainText(packet["call"].decode())
-        self.ui.textBrowser.insertPlainText(packet["response"].decode() +"\n")
+        self.insert_text(packet["call"].decode())
+        self.insert_text(packet["response"].decode() +"\n")
         data = packet["data"]
         if "PO" in packet["response"].decode():
             self.ui.positionLbl.setText("{:.4f} mm".format(data))
         else:
-            self.ui.textBrowser.insertPlainText("Unexpected response: \n")
-            self.ui.textBrowser.insertPlainText("    {}\n".format(data))
+            self.insert_text("Unexpected response: \n")
+            self.insert_text("    {}\n".format(data))

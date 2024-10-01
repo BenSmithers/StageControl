@@ -103,8 +103,6 @@ class Ui_Widget(object):
         self.textBrowser.setTextColor(QtGui.QColor(0, 255, 0))
         self.textBrowser.setStyleSheet("background-color: black;")
         self.textBrowser.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignBottom)
-        self.textBrowser.insertPlainText("0gi\n")
-        self.textBrowser.insertPlainText("0PO12931223\n")
         self.textBrowser.setEnabled(False)
 
         self.verticalLayout.addWidget(self.textBrowser)
