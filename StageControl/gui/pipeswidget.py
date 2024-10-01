@@ -2,12 +2,13 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from warn_widg import WarnWidget
+
 from pipes_gui import Ui_Form as gui
 import numpy as np 
 
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPolygonF, QColor
-from PyQt5 import QtMultimedia
 from emailer import send_alert
 import os 
 
@@ -176,7 +177,11 @@ class PipesWidget(QtWidgets.QWidget):
                 pass 
             else:
                 self._alert_thrown = True 
-                send_alert( "The water pressure is dangerously high!")
+                message = "Warning! The water pressure is dangerously high!"
+                #send_alert( message)
+                self.dialog = WarnWidget(parent=self,message=message)
+                self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+                self.dialog.exec_()
                 self.alarm_timer.start(250)
         else:
             self._alert_thrown = False 

@@ -15,3 +15,9 @@ class Status(Enum):
     MotorError=11
     MechanicalOutofRange=12
     OverCurrent=13 
+
+
+class ELLxBoardNotFound(Exception):
+    pass 
+class LEDNotFound(Exception):
+    pass 

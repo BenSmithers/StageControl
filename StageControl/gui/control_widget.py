@@ -1,11 +1,13 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import  QWidget
-
+import sys 
 from StageControl.ELLxControl import ELLxConnection
 from StageControl.LEDControl import LEDBoard
 from controlgui import Ui_Widget as gui 
 
 from emailer import send_alert
+
+from warn_widg import WarnWidget
 
 class ControlWidget(QtWidgets.QWidget):
     def __init__(self, parent:QWidget):
@@ -26,12 +28,35 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_locations.append(1)
         self._led_locations.append(7)
 
-        self._conn = ELLxConnection("", fake=True)
-        self._board = LEDBoard("", fake=True)
-        self._board.enable()
+        failure = False 
+        try:
+            self._conn = ELLxConnection("", fake=False)
+        except Exception as e:
+            self.dialog = WarnWidget(parent=self,message="Critical Error! {}".format(e))
+            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            self.dialog.ui.buttonBox.helpRequested.connect(self.help)
+            self.dialog.exec_() 
+            
+            failure = True 
 
-        self._button_timer =  QtCore.QTimer(self)
-        self._button_timer.timeout.connect(self._enable_button)
+        try:
+            self._board = LEDBoard("", fake=True)
+            self._board.enable()
+
+            self._button_timer =  QtCore.QTimer(self)
+            self._button_timer.timeout.connect(self._enable_button)
+        except Exception as e:
+            self.dialog = WarnWidget(parent=self,message="Critical Error! {}".format(e))
+            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            self.dialog.ui.buttonBox.helpRequested.connect(self.help)
+            self.dialog.exec_() 
+            failure = True 
+
+        if failure:
+            sys.exit(1)    
+
+    def help(self):
+        print("Pressed help!")
 
     def _enable_button(self):
         self._button_timer.stop()

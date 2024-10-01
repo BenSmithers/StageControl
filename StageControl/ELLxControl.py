@@ -8,8 +8,10 @@ HANDSHAKE=False
 STOP_BIT=serial.STOPBITS_ONE
 
 from StageControl import message
-from StageControl.utils import Status
+from StageControl.utils import Status, ELLxBoardNotFound
 from StageControl.message import _encode_signed_long
+import os 
+
 class ELLxConnection:
     def __init__(self, usb_interface, pulses_per_rev=1024, fake=False):
         """
@@ -26,6 +28,9 @@ class ELLxConnection:
         if fake:
             pass
         else:
+            if not os.path.exists(usb_interface):
+                raise ELLxBoardNotFound("Linear stage not found!") 
+
             self._con = serial.Serial(usb_interface, baudrate=BAUD, parity=PARITY, bytesize=DATABIT, stopbits=STOP_BIT)
             
 

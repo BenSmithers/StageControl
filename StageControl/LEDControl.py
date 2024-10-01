@@ -1,6 +1,8 @@
 import serial 
 import time 
 from contextlib import ContextDecorator
+from StageControl.utils import LEDNotFound
+import os 
 
 BAUD = 115200
 class LEDBoard(ContextDecorator):
@@ -10,6 +12,8 @@ class LEDBoard(ContextDecorator):
     def __init__(self, usb_interface, fake=False ):
         self._fake = fake 
         if not self._fake:
+            if not os.path.exists(usb_interface):
+                raise LEDNotFound("Could not find LED board!")
             self._con = serial.Serial(usb_interface, baudrate=BAUD)
         time.sleep(1)
         
