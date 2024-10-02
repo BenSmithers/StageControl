@@ -40,7 +40,11 @@ class Ui_Form(object):
         self.status_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.status_label.setText("... Awaiting Input")
         self.verticalLayout.addWidget(self.status_label)
-
+        self.stop_button = QtWidgets.QPushButton(Form)
+        self.stop_button.setObjectName("stop_butotn")
+        self.stop_button.setText("Stop Automation")
+        self.stop_button.setEnabled(False)
+        self.verticalLayout.addWidget(self.stop_button)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
 

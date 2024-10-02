@@ -56,15 +56,12 @@ class Ui_MainWindow(object):
         self.plot_widg.setObjectName("widget_inst")
 
 
-
-
-
         self.verticalLayout_3.addWidget(self.plot_widg)
         self.filepathEdit = LineEdit(self.plotTab)
         self.filepathEdit.setObjectName("filepathEdit")
         self.verticalLayout_3.addWidget(self.filepathEdit)
         self.tabWidget.addTab(self.plotTab, "")
-        self.pipes = PipesWidget(self.centralwidget,self.control_widget)
+        self.pipes = PipesWidget(self.centralwidget,self.control_widget, fake)
         self.tabWidget.addTab(self.pipes, "Pump Operations")
         self.verticalLayout.addWidget(self.tabWidget)
         MainWindow.setCentralWidget(self.centralwidget)

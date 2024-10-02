@@ -13,7 +13,7 @@ from emailer import send_alert
 import os 
 
 SCALE = 5.0
-
+PUMP_REQUIRED = True
 
 class Box(QPolygonF):
     def __init__(self, center:QPointF):
@@ -44,8 +44,12 @@ class Clicker(QGraphicsScene):
 
 
 class PipesWidget(QtWidgets.QWidget):    
-    def __init__(self, parent:QWidget,  logger):
+    def __init__(self, parent:QWidget,  logger, fake=False):
         QtWidgets.QWidget.__init__(self, parent)
+
+        if not fake:
+            raise NotImplementedError("No real-implementation completed")
+        self._fake = fake 
         self.ui = gui()
         self.ui.setupUi(self)
         self._logger = logger
@@ -70,7 +74,8 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.drain_button.clicked.connect(self.drain_button_clicked)
         self.ui.fill_filter.clicked.connect(self.fill_filtered_clicked)
         self.ui.fill_osmosis.clicked.connect(self.fill_osmosis_clicked)
-        
+        self.ui.stop_button.clicked.connect(self.stop_button)
+
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
 
@@ -84,6 +89,8 @@ class PipesWidget(QtWidgets.QWidget):
         self._draining = False 
         self._filling_filter = False 
         self._filling_osmo = False
+        self._draining_open_tank = False
+        self._fake_open_tank_lvl = 0
         self._overflow_counter = 0
         self._chamber_drain_counter = 0
 
@@ -98,14 +105,38 @@ class PipesWidget(QtWidgets.QWidget):
         self.update()
 
 
+    def stop_button(self):
+        self.ui.status_label.setText("... Awaiting Input")
+        self.enable_all()
+        self.ui.bv1_button.setChecked(False)
+        self.ui.bv2_button.setChecked(False)
+        self.ui.bv3_button.setChecked(False)
+        self.ui.bv4_button.setChecked(False)
+        self.ui.bv5_button.setChecked(False)
+        self.ui.bv6_button.setChecked(False)
+        self.ui.sv1_button.setChecked(False)
+        self.ui.sv2_button.setChecked(False)
+        self.ui.pu1_button.setChecked(False)
+        self.ui.pu2_button.setChecked(False)
+        self.ui.pu3_button.setChecked(False)
+        self._automated = False
+        self._draining = False 
+        self._filling_filter = False 
+        self._filling_osmo = False
+        self._overflow_counter = 0
+        self._chamber_drain_counter = 0
 
     def drain_button_clicked(self):
+        """
+            Set the state of these bools so this empties, then resets the state 
+        """
         self._automated = True 
         self._draining = True 
         self._filling_filter = False 
         self._filling_osmo = False 
         self.ui.status_label.setText("... DRAINING")
-        self.disable_all()
+        self.disable_all() # while automatically doing things, we don't want the user tweaking the configuration of the gui
+        self.ui.stop_button.setEnabled(True)
 
     def fill_osmosis_clicked(self):
         self._automated = True 
@@ -114,6 +145,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._filling_filter = False 
         self.disable_all()
         self.ui.status_label.setText("... DRAINING")
+        self.ui.stop_button.setEnabled(True)
     def fill_filtered_clicked(self):
         self._automated = True 
         self._draining = True 
@@ -121,6 +153,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._filling_osmo = False 
         self.disable_all()
         self.ui.status_label.setText("... DRAINING")
+        self.ui.stop_button.setEnabled(True)
 
     def flash(self):
         if any(self._alarm):
@@ -153,19 +186,34 @@ class PipesWidget(QtWidgets.QWidget):
                 flows[4] = 1
             self._fake_chamber -= 10
             
-        if self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked():
+        """
+            To have flow, you need sv1 and sv2 to be flowing
+            If the pump is required, you also need PU1 turned on 
+                PR | not PR | sv2 |  not PR or sv2  
+                T  |    F   |  T  |       T
+                T  |    F   |  F  |       F
+                F  |    T   |  T  |       T
+                F  |    T   |  F  |       T
+
+                    so this will only be false if the pump is needed and if sv2 is off 
+        """
+        if self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked() and ((not PUMP_REQUIRED) or self.ui.pu1_button.isChecked()):
             flows[0] = 1
             flows[4] = 1 
             if self.ui.bv6_button.isChecked():
+                flows[4] = 0
                 flows[1] = 1 
                 self._fake_chamber += 10 
                 if self._fake_chamber > 50:
                     full = True 
                     flows[2] = 1 
+                    self._fake_open_tank_lvl += self._fake_chamber-50
                     self._fake_chamber = 50
-                if not full:
-                    flows[4] = 0
 
+
+        if self.ui.pu3_button.isChecked() and self._fake_open_tank_lvl>0:
+            flows[4] = 1
+            self._fake_open_tank_lvl-=10
         if self._fake_chamber<0:
             self._fake_chamber = 0
 
@@ -173,7 +221,7 @@ class PipesWidget(QtWidgets.QWidget):
         flows = flows.astype(int)
         pressures = 20 + np.random.randn(4)*3
         scales = np.array([30, 5, -5, -10])
-        if not self.ui.sv1_button.isChecked():
+        if not self.ui.sv1_button.isChecked() or (not ((not PUMP_REQUIRED) or self.ui.pu1_button.isChecked())):
             pressures*=0
             scales*=0
         if False: # full:
@@ -186,6 +234,9 @@ class PipesWidget(QtWidgets.QWidget):
         return pressures, flows
 
     def disable_all(self):
+        """
+            Disable the buttons, makes the gui non-interactable 
+        """
         self.ui.bv1_button.setEnabled(False)
         self.ui.bv2_button.setEnabled(False)
         self.ui.bv3_button.setEnabled(False)
@@ -232,7 +283,10 @@ class PipesWidget(QtWidgets.QWidget):
 
     def update(self):
         
-        pressures, flows = self._generate_testdata()
+        if self._fake:
+            pressures, flows = self._generate_testdata()
+        else:
+            raise NotImplementedError()
 
         flow_bar = flows*90+5
         self.ui.flow1.setValue(flow_bar[0])
@@ -247,6 +301,15 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]))
         self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]))
         self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3]))
+
+
+        if self.open_tank_75:
+            self.ui.pu3_button.setChecked(True)
+            self._draining_open_tank = True 
+        if self._draining_open_tank:
+            if not self.open_tank_25:
+                self.ui.pu3_button.setChecked(False)
+                self._draining_open_tank=False
 
         self.timer.start(2500)
 
@@ -269,6 +332,7 @@ class PipesWidget(QtWidgets.QWidget):
                         if not (self._filling_filter or self._filling_osmo):
                             self._automated = False 
                             self.enable_all()
+                            self.ui.stop_button.setEnabled(False)
                             self.ui.status_label.setText("... Done!")
 
                         self._chamber_drain_counter = 0
@@ -290,6 +354,7 @@ class PipesWidget(QtWidgets.QWidget):
                 if self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked():
                     self.ui.bv6_button.setChecked(True)
 
+                self.ui.pu1_button.setChecked(True)
                 self.ui.sv1_button.setChecked(True)
                 self.ui.sv2_button.setChecked(True)
 
@@ -315,6 +380,7 @@ class PipesWidget(QtWidgets.QWidget):
                         self._automated = False
                         self._overflow_counter = 0
                         self.enable_all()
+                        self.ui.stop_button.setEnabled(False)
                         self.ui.status_label.setText("... Done!")
                 else:
                     self._overflow_counter = 0
@@ -325,6 +391,7 @@ class PipesWidget(QtWidgets.QWidget):
             else:
                 self._alert_thrown = True 
                 self.enable_all()
+                self.ui.stop_button.setEnabled(False)
                 self._automated = False 
                 self._filling_filter = False 
                 self._filling_osmo = False 
@@ -370,3 +437,22 @@ class PipesWidget(QtWidgets.QWidget):
         self._logger.insert_text("pu2 {}\n".format("on" if self.ui.pu2_button.isChecked() else "off"))  
     def pu3_change(self):
         self._logger.insert_text("pu3 {}\n".format("on" if self.ui.pu3_button.isChecked() else "off"))  
+
+    @property
+    def open_tank_25(self)->bool:
+        if self._fake: 
+            return self._fake_open_tank_lvl>50
+        else:
+            raise NotImplementedError("")
+    @property
+    def open_tank_50(self)->bool:
+        if self._fake: 
+            return self._fake_open_tank_lvl>100
+        else:
+            raise NotImplementedError("")
+    @property
+    def open_tank_75(self)->bool:
+        if self._fake: 
+            return self._fake_open_tank_lvl>150
+        else:
+            raise NotImplementedError("")
