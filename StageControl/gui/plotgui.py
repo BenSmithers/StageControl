@@ -11,7 +11,6 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
@@ -40,6 +39,7 @@ class Ui_Form(object):
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
+        self.comboBox.setMaximumWidth(200)
         self.verticalLayout.addWidget(self.comboBox)
         self.label_2 = QtWidgets.QLabel(Form)
         self.label_2.setObjectName("label_2")
@@ -53,6 +53,7 @@ class Ui_Form(object):
         self.spinBox = QtWidgets.QSpinBox(Form)
         self.spinBox.setMinimum(1)
         self.spinBox.setObjectName("spinBox")
+        self.spinBox.setMaximumWidth(200)
         self.verticalLayout.addWidget(self.spinBox)
 
         self.pvalLayout = QtWidgets.QHBoxLayout()
@@ -60,28 +61,40 @@ class Ui_Form(object):
         self.pval_lbl = QtWidgets.QLabel()
         self.pval_lbl.setText("Fit p-value: ")
         self.pval_lbl.setObjectName("pbal_lbl")
+        self.pval_lbl.setMaximumWidth(50)
         self.pvalLayout.addWidget(self.pval_lbl)
         self.pval_value = QtWidgets.QLabel()
         self.pval_value.setText("nan")
         self.pval_value.setObjectName("pval_value")
+        self.pval_value.setMaximumWidth(50)
         self.pvalLayout.addWidget(self.pval_value)
+        self.pvalLayout.setAlignment(QtCore.Qt.AlignLeft)
+        self.pvalLayout.setSizeConstraint(150)
         self.verticalLayout.addLayout(self.pvalLayout)
 
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.horizontalLayout_2.setSizeConstraint(150)
+        self.horizontalLayout_2.setAlignment( QtCore.Qt.AlignLeft)
         self.mintime = QtWidgets.QDoubleSpinBox(Form)
         self.mintime.setMaximum(10000.0)
         self.mintime.setSingleStep(0.5)
         self.mintime.setObjectName("mintime")
+        self.mintime.setMaximumWidth(200)
+        self.mintime.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addWidget(self.mintime)
         self.timelbl = QtWidgets.QLabel(Form)
         self.timelbl.setObjectName("timelbl")
+        self.timelbl.setMaximumWidth(50)
+        self.timelbl.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addWidget(self.timelbl)
         self.maxtime = QtWidgets.QDoubleSpinBox(Form)
+        self.maxtime.setMaximumWidth(200)
         self.maxtime.setMaximum(10000.0)
         self.maxtime.setValue(10000)
         self.maxtime.setSingleStep(0.5)
         self.maxtime.setObjectName("maxtime")
+        self.maxtime.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addWidget(self.maxtime)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
@@ -94,6 +107,9 @@ class Ui_Form(object):
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, Form)
+        self.toolbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
+        self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
+
         self.verticalLayout.addWidget(self.toolbar)
         self.horizontalLayout.addWidget(self.canvas)
 
