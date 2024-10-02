@@ -72,7 +72,7 @@ def _send_alert(shifter_emails:'list[str]', warning_message, warning_headline="S
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     creds_file, SCOPES)
-                creds = flow.run_local_server(port=0)
+                creds = flow.run_local_server(port=0,access_type='offline')
             # Save the credentials for the next run
             with open('token.json', 'w') as token:
                 token.write(creds.to_json())
@@ -90,7 +90,8 @@ def _send_alert(shifter_emails:'list[str]', warning_message, warning_headline="S
         message = """
             Dear Shifter, 
 
-            You are receiving this message because you are currently on shift. {} 
+            You are receiving this message because you are currently on shift. {}
+            If you aren't sure what to do, you might want to email NAME at EMAIL. 
 
             Please Do Something, 
             The WCTE Water Alert Notification System 
