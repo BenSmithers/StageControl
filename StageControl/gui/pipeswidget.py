@@ -83,16 +83,19 @@ class PipesWidget(QtWidgets.QWidget):
         self.alarm_timer.timeout.connect(self.flash)
 
         self._fake_chamber = 0
-        self._fake_open_tank = 0
+        self._fake_open_tank_lvl = 0
 
         self._automated = False
         self._draining = False 
         self._filling_filter = False 
         self._filling_osmo = False
         self._draining_open_tank = False
-        self._fake_open_tank_lvl = 0
         self._overflow_counter = 0
         self._chamber_drain_counter = 0
+
+        self._ncalls = 0
+
+        self._test_thermo_temperature = 20.0
 
         self._flash_red = True
         self._alarm = np.array([False, False, False, False])
@@ -162,12 +165,22 @@ class PipesWidget(QtWidgets.QWidget):
                 self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,0,0)")
                 self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,0,0)")
                 self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,0,0)") 
+                self.ui.temp_value_1.setStyleSheet("background-color:rgb(255,0,0)") 
+                self.ui.temp_value_2.setStyleSheet("background-color:rgb(255,0,0)") 
                 self._flash_red = False 
             else:
-                self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
-                self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
-                self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
-                self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
+                if self._alarm[0]:
+                    self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
+                if self._alarm[1]:
+                    self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
+                if self._alarm[2]:
+                    self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
+                if self._alarm[3]:
+                    self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
+                if self._alarm[4]:
+                    self.ui.temp_value_1.setStyleSheet("background-color:rgb(255,255,255)")
+                if self._alarm[5]:
+                    self.ui.temp_value_2.setStyleSheet("background-color:rgb(255,255,255)")
                 self._flash_red = True
 
         if any(self._alarm):
@@ -213,7 +226,9 @@ class PipesWidget(QtWidgets.QWidget):
 
         if self.ui.pu3_button.isChecked() and self._fake_open_tank_lvl>0:
             flows[4] = 1
-            self._fake_open_tank_lvl-=10
+            self._fake_open_tank_lvl-=15
+            if self._fake_open_tank_lvl<0:
+                self._fake_open_tank_lvl = 0
         if self._fake_chamber<0:
             self._fake_chamber = 0
 
@@ -229,9 +244,19 @@ class PipesWidget(QtWidgets.QWidget):
 
         pressures = pressures + scales
 
-        temperatures = np.zeros(6)
 
-        return pressures, flows
+        temperatures = np.random.randn(2)*0.1 + 20
+        temperatures[0] += self._ncalls
+        self._ncalls += 5
+
+        if self.ui.pu1_button.isChecked() and self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked() and self.ui.bv3_button.isChecked():
+            self._ncalls -= 7
+            if self._ncalls <0 :
+                self._ncalls = 0
+
+        
+
+        return pressures, flows, temperatures
 
     def disable_all(self):
         """
@@ -284,7 +309,7 @@ class PipesWidget(QtWidgets.QWidget):
     def update(self):
         
         if self._fake:
-            pressures, flows = self._generate_testdata()
+            pressures, flows, temperature = self._generate_testdata()
         else:
             raise NotImplementedError()
 
@@ -295,7 +320,11 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.flow4.setValue(flow_bar[3])
         self.ui.flow5.setValue(flow_bar[4])
 
-        self._alarm = pressures>60
+        self.ui.temp_value_1.setText("{:.2f} C".format(temperature[0]))
+        self.ui.temp_value_2.setText("{:.2f} C".format(temperature[1]))
+
+        self._alarm = pressures>70
+        self._alarm=  self._alarm.tolist()
 
         self.ui.lcdNumber.setText("{:.2f}".format(pressures[0]))
         self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]))
@@ -384,26 +413,23 @@ class PipesWidget(QtWidgets.QWidget):
                         self.ui.status_label.setText("... Done!")
                 else:
                     self._overflow_counter = 0
-                        
+        
+        self._alarm.append(temperature[0] > 50)
+        self._alarm.append(temperature[1] > 50)
         if any(self._alarm):
             if self._alert_thrown:
                 pass 
             else:
                 self._alert_thrown = True 
-                self.enable_all()
-                self.ui.stop_button.setEnabled(False)
-                self._automated = False 
-                self._filling_filter = False 
-                self._filling_osmo = False 
-                self.ui.sv1_button.setChecked(False)
-                self.ui.sv2_button.setChecked(False)
-
                 message = "Warning! The water pressure is dangerously high! Shutting off input valve and chamber valve"
-                self._logger.insert_text(message + "\n")
-                #send_alert( message)
-                self.dialog = WarnWidget(parent=self,message=message)
-                self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-                self.dialog.exec_()
+                heat = False 
+                if self._alarm[4]:
+                    heat = True  
+                    message = "Warning! The UV Thermocouple is reading a dangerously high temperature (>50C)! Trying to pass water over the UV sterilier. You should turn the UV sterilizer off too."
+                if self._alarm[5]:
+                    heat = True 
+                    message = "Warning! The water temperature is dangerously high!"
+                self.panic(message, heat)                
                 self.alarm_timer.start(250)
         else:
             self._alert_thrown = False 
@@ -412,6 +438,28 @@ class PipesWidget(QtWidgets.QWidget):
             self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
             self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
             self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.temp_value_2.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.temp_value_1.setStyleSheet("background-color:rgb(255,255,255)")
+            
+    def panic(self, message, heat=False):
+        self.enable_all()
+        self.ui.stop_button.setEnabled(False)
+        self._automated = False 
+        self._filling_filter = False 
+        self._filling_osmo = False 
+
+        if heat:
+            self.ui.bv6_button.setChecked(False)
+            self.ui.pu1_button.setChecked(True)
+            self.ui.bv3_button.setChecked(True)
+
+        self.ui.sv1_button.setChecked(heat)
+        self.ui.sv2_button.setChecked(heat) 
+        self._logger.insert_text(message + "\n")
+        send_alert( message)
+        self.dialog = WarnWidget(parent=self,message=message)
+        self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.dialog.exec_()
 
     def bv1_change(self):
         self._logger.insert_text("bv1 {}\n".format("on" if self.ui.bv1_button.isChecked() else "off")) 

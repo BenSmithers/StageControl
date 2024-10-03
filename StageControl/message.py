@@ -193,7 +193,7 @@ class InfoDump(Response):
         [2, DecoderType.Word], # firmware ver
         [2, DecoderType.Word], # most significant bit signifies thread type? 
         [4, DecoderType.Word], # 31 mm travel
-        [8, DecoderType.Word], # 1 pulse per position?
+        [8, DecoderType.SignedLong], # 1 pulse per position?
     ]
 
 class GetPosition(Response):

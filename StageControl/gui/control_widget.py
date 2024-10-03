@@ -8,10 +8,10 @@ from StageControl.LEDControl import LEDBoard
 from controlgui import Ui_Widget as gui 
 
 from datetime import datetime 
-
 from emailer import send_alert
-
 from warn_widg import WarnWidget, HelpWidget
+
+from constants import STAGE_USB, LED_BOARD_USB
 
 class ControlWidget(QtWidgets.QWidget):
     def __init__(self, parent:QWidget, fake=False):
@@ -36,7 +36,7 @@ class ControlWidget(QtWidgets.QWidget):
 
         failure = False 
         try:
-            self._conn = ELLxConnection("", fake=fake)
+            self._conn = ELLxConnection(STAGE_USB, fake=fake)
         except Exception as e:
             self.dialog = WarnWidget(parent=self,message="Critical Error! {}".format(e))
             self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -46,7 +46,7 @@ class ControlWidget(QtWidgets.QWidget):
             failure = True 
 
         try:
-            self._board = LEDBoard("", fake=fake)
+            self._board = LEDBoard(LED_BOARD_USB, fake=fake)
             self._board.enable()
 
             self._button_timer =  QtCore.QTimer(self)
@@ -123,6 +123,17 @@ class ControlWidget(QtWidgets.QWidget):
         data = packet["data"]
         if "PO" in packet["response"].decode():
             self.ui.positionLbl.setText("{:.4f} mm".format(data))
+        if "GS" in packet["response"].decode():
+            self.insert_text("GS Status response: {}\n".format(data)) 
+
+            self.dialog = WarnWidget(parent=self,message="Notice! Linear stage returned status: {}".format(data))
+            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            self.dialog.ui.buttonBox.helpRequested.connect(self.help)
+            self.dialog.exec_() 
+        if "IN" in packet["response"].decode():
+            for entry in data:
+                self.insert_text("Begin Info Response Dump\n")
+                self.insert_text("    {}\n".format(entry))
         else:
             self.insert_text("Unexpected response: \n")
             self.insert_text("    {}\n".format(data))
