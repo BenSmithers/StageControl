@@ -1,0 +1,5 @@
+data/shifter_data.csv
+data/DONOTCOMMIT.json
+token.json
+*.ui
+data/default_email.json
