@@ -5,6 +5,101 @@ If there is no terminal open, press `Ctrl+Alt+T` to launch one.
 Then, execute the `launch.sh` bash script. 
 This will start the water quality monitoring GUI. 
 
+## First time setup 
+
+You will need a monitor and a keyboard for first-time setup. A keyboard is optional. 
+Once the setup is complete, these are not longer required. 
+
+### Network Setup 
+
+Plug the ethernet cable in to the computer, turn the computer on, and sign in. 
+If we have been provided with a network address, you can go to the Static IP section below. 
+Otherwise, go to the dynamic IP section beneath that. 
+
+#### Static IP 
+
+On the top right corner, click the arrow pointing down and select settings. 
+Under "network" click the gear under the "wired" connection category. 
+Choose "manual" under IPv4, then enter in the IP Address, the netmask, and the gateway. If a DNS is provided, enter that in too. If not, you can use `8.8.8.8` or `8.8.4.4`; these are popular google-managed DNS servers. 
+
+You should now be able to access the internet on the computer. 
+If a domain name (like, `watermon.cern.ch`) was provided, you should be able to SSH to that address. 
+
+#### Dynamic IP 
+
+If _no_ static IP address was provided, then instead we'll have to use a dynamic address. 
+On the top right corner, click the arrow pointing down and select settings. 
+Under "network" click the gear under the "wired" connection category, then click "Automatic" under IPv4 method. 
+Press apply.  
+Wait a moment as the connection establishes. 
+You will then need to open a web browser (the computer already has firefox), and should try to go to a CERN webpage and proceed with the normal CERN device registration. 
+
+Afterwards, run `ifconfig` in a terminal. You will see an output like 
+```
+enp1s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.1.3.129   netmask 255.255.224.0  broadcast *************
+        inet6 ************  prefixlen 64  scopeid 0x20<link>
+        ether ************  txqueuelen 1000  (Ethernet)
+        RX packets 13888376  bytes 1383517057 (1.3 GB)
+        RX errors 0  dropped 108953  overruns 0  frame 0
+        TX packets 199207  bytes 249137742 (249.1 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+The number beside `inet` is the machine's IPv4 address. You can now SSH directly to the machine like so
+For instance:
+```
+    ssh watermon@10.1.3.129 
+```
+### Setting up the LED board and the Stage 
+
+Before plugging in anything, run
+```
+ls /dev/ | grep USB
+```
+and note what shows up. It might be nothing.
+Plug in the LED board, and run the command again.
+You will likely see something has appeared now, highlight the filepath it shows and copy it (Ctrl+Shift+C).
+Open the path list at 
+```
+/home/watermon/software/StageControl/StageControl/gui/constants.py 
+```
+and replace the path definition for `LED_BOARD_USB` with the path you just copied. 
+Save this file, then plug in the thorlabs stage. 
+Run the same `ls` command, and note that a second path has appeared. Copy the new one, and add it to the `STAGE_USB` variable in the same file as before
+
+Now, run 
+```
+    sudo chmod 666 /dev/tty.USB0
+    sudo chmod 666 /dev/tty.USB1
+```
+where you will replace each path with the ones from before. 
+The password will be the same as the one you logged in with. 
+
+Now if you launch the gui,
+```
+   /home/watermon/launch.sh
+```
+it should start up successfully. 
+You should also now be able to control the LED board and the stage through the GUI.
+Test it out, try selecting different wavelengths and make sure it actually lights up and moves. 
+
+### Starting data-taking
+
+Once the PMTs are powered on and the LED is turned on, try running the PicoScope 7 software and make sure you can see signal in the PMTs.
+Be sure the amplifier is also powered on!! 
+Go to the `~/software/PicoCode/` folder and try running `python3 measure.py`. 
+The Picoscope should click on and you should see an output as it takes data. 
+Then, you can edit the cron, 
+```
+crontab -e
+```
+and uncomment the last two lines. 
+Wait a few minutes; once the time reaches a minute divisible by three, you should hear the picoscope click. 
+That means it's taking data now. Good! 
+
+
+
 ## Changing to a different LED 
 
 Once the GUI has been launched, navigate to the `Control` tab. 
