@@ -7,34 +7,14 @@ from warn_widg import WarnWidget
 from pipes_gui import Ui_Form as gui
 import numpy as np 
 
-from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPolygonF, QColor
+import pexpect
 from emailer import send_alert
 import os 
 
+from StageControl.gui.raspberry import PiConnect
+from StageControl.gui.constants import PRESSURE_THRESH,TEMP_MAX
 SCALE = 5.0
 PUMP_REQUIRED = True
-
-class Box(QPolygonF):
-    def __init__(self, center:QPointF):
-        points = [
-            QPointF( center.x()-SCALE , center.y()-SCALE),
-            QPointF( center.x()-SCALE , center.y()+SCALE),
-            QPointF( center.x()+SCALE , center.y()+SCALE),
-            QPointF( center.x()+SCALE , center.y()-SCALE),
-        ]
-        super().__init__(points)
-
-class Diamond(QPolygonF):
-    def __init__(self, center:QPointF):
-        points = [
-            QPointF( center.x()-SCALE , center.y()),
-            QPointF( center.x() , center.y()+SCALE),
-            QPointF( center.x()+SCALE , center.y()),
-            QPointF( center.x() , center.y()-SCALE)
-        ]
-        super().__init__(points)
-
 
 class Clicker(QGraphicsScene):
     def __init__(self, parent:QGraphicsView, parent_window):
@@ -42,17 +22,22 @@ class Clicker(QGraphicsScene):
         self.parent = parent 
         self._parent_window = parent_window
 
-
 class PipesWidget(QtWidgets.QWidget):    
     def __init__(self, parent:QWidget,  logger, fake=False):
         QtWidgets.QWidget.__init__(self, parent)
 
-        if not fake:
-            raise NotImplementedError("No real-implementation completed")
         self._fake = fake 
         self.ui = gui()
         self.ui.setupUi(self)
         self._logger = logger
+
+        if not fake:
+            try:
+                self._pi = PiConnect()
+            except pexpect.ExceptionPexpect as e:
+                self.panic("{}".format(e) + " for water monitoring", heat=False, skip_email=True)
+            except Exception as e:
+                self.panic("{}".format(e), heat=False, skip_email=True)
 
         self.scene = Clicker(self.ui.graphicsView, self)
         self.ui.graphicsView.setScene(self.scene)
@@ -103,7 +88,6 @@ class PipesWidget(QtWidgets.QWidget):
         sound_file = os.path.join(os.path.dirname(__file__), "data","alarm.mp3")
 
         self._alert_thrown = False 
-
 
         self.update()
 
@@ -307,11 +291,14 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.fill_osmosis.setEnabled(True)
 
     def update(self):
-        
+        """
+            Access the latest data, update the gui, 
+            check for warnings, proceed with automation
+        """
         if self._fake:
             pressures, flows, temperature = self._generate_testdata()
         else:
-            raise NotImplementedError()
+            pressures, flows, temperature = self._pi.data() 
 
         flow_bar = flows*90+5
         self.ui.flow1.setValue(flow_bar[0])
@@ -323,14 +310,40 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.temp_value_1.setText("{:.2f} C".format(temperature[0]))
         self.ui.temp_value_2.setText("{:.2f} C".format(temperature[1]))
 
-        self._alarm = pressures>70
-        self._alarm=  self._alarm.tolist()
-
         self.ui.lcdNumber.setText("{:.2f}".format(pressures[0]))
         self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]))
         self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]))
         self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3]))
 
+        self._alarm = pressures>PRESSURE_THRESH
+        self._alarm=  self._alarm.tolist()
+        self._alarm.append(temperature[0] > TEMP_MAX)
+        self._alarm.append(temperature[1] > TEMP_MAX)
+        if any(self._alarm):
+            if self._alert_thrown:
+                pass 
+            else:
+                self._alert_thrown = True 
+                message = "Warning! The water pressure is dangerously high! Shutting off input valve and chamber valve"
+                heat = False 
+                if self._alarm[4]:
+                    heat = True  
+                    message = "Warning! The UV Thermocouple is reading a dangerously high temperature (>50C)! Trying to pass water over the UV sterilier. You should turn the UV sterilizer off too."
+                if self._alarm[5]:
+                    heat = True 
+                    message = "Warning! The water temperature is dangerously high!"
+                self.panic(message, heat)                
+                self.alarm_timer.start(250) # start flashing the gui red and white
+        else:
+            self._alert_thrown = False 
+            self.alarm_timer.stop()
+            self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.temp_value_2.setStyleSheet("background-color:rgb(255,255,255)")
+            self.ui.temp_value_1.setStyleSheet("background-color:rgb(255,255,255)")
+            
 
         if self.open_tank_75:
             self.ui.pu3_button.setChecked(True)
@@ -414,34 +427,12 @@ class PipesWidget(QtWidgets.QWidget):
                 else:
                     self._overflow_counter = 0
         
-        self._alarm.append(temperature[0] > 50)
-        self._alarm.append(temperature[1] > 50)
-        if any(self._alarm):
-            if self._alert_thrown:
-                pass 
-            else:
-                self._alert_thrown = True 
-                message = "Warning! The water pressure is dangerously high! Shutting off input valve and chamber valve"
-                heat = False 
-                if self._alarm[4]:
-                    heat = True  
-                    message = "Warning! The UV Thermocouple is reading a dangerously high temperature (>50C)! Trying to pass water over the UV sterilier. You should turn the UV sterilizer off too."
-                if self._alarm[5]:
-                    heat = True 
-                    message = "Warning! The water temperature is dangerously high!"
-                self.panic(message, heat)                
-                self.alarm_timer.start(250)
-        else:
-            self._alert_thrown = False 
-            self.alarm_timer.stop()
-            self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
-            self.ui.lcdNumber_4.setStyleSheet("background-color:rgb(255,255,255)")
-            self.ui.lcdNumber_3.setStyleSheet("background-color:rgb(255,255,255)")
-            self.ui.lcdNumber_2.setStyleSheet("background-color:rgb(255,255,255)")
-            self.ui.temp_value_2.setStyleSheet("background-color:rgb(255,255,255)")
-            self.ui.temp_value_1.setStyleSheet("background-color:rgb(255,255,255)")
-            
-    def panic(self, message, heat=False):
+
+    def panic(self, message, heat=False, skip_email=False):
+        """
+            Called in an emergency! 
+            Shuts off automation, enables the gui, and then sets up the tubes in the right way
+        """
         self.enable_all()
         self.ui.stop_button.setEnabled(False)
         self._automated = False 
@@ -456,35 +447,58 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.sv1_button.setChecked(heat)
         self.ui.sv2_button.setChecked(heat) 
         self._logger.insert_text(message + "\n")
-        send_alert( message)
+        if not skip_email:
+            send_alert( message)
         self.dialog = WarnWidget(parent=self,message=message)
         self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.dialog.exec_()
 
     def bv1_change(self):
         self._logger.insert_text("bv1 {}\n".format("on" if self.ui.bv1_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.bv(1, self.ui.bv1_button.isChecked())
     def bv2_change(self):
         self._logger.insert_text("bv2 {}\n".format("on" if self.ui.bv2_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.bv(2, self.ui.bv2_button.isChecked())
     def bv3_change(self):
         self._logger.insert_text("bv3 {}\n".format("on" if self.ui.bv3_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.bv(3, self.ui.bv3_button.isChecked())
     def bv4_change(self):
         self._logger.insert_text("bv4 {}\n".format("on" if self.ui.bv4_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.bv(4, self.ui.bv4_button.isChecked())
     def bv5_change(self):
         self._logger.insert_text("bv5 {}\n".format("on" if self.ui.bv5_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.bv(5, self.ui.bv5_button.isChecked())
     def bv6_change(self):
         self._logger.insert_text("bv6 {}\n".format("on" if self.ui.bv6_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.bv(6, self.ui.bv6_button.isChecked())
 
     def sv1_change(self):
         self._logger.insert_text("sv1 {}\n".format("on" if self.ui.sv1_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.sv(1, self.ui.sv1_button.isChecked())
     def sv2_change(self):
         self._logger.insert_text("sv2 {}\n".format("on" if self.ui.sv2_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.sv(2, self.ui.sv2_button.isChecked())
 
     def pu1_change(self):
         self._logger.insert_text("pu1 {}\n".format("on" if self.ui.pu1_button.isChecked() else "off")) 
+        if not self._fake:
+            self._pi.pump(1, self.ui.pu1_button.isChecked())
     def pu2_change(self):
         self._logger.insert_text("pu2 {}\n".format("on" if self.ui.pu2_button.isChecked() else "off"))  
+        if not self._fake:
+            self._pi.pump(2, self.ui.pu2_button.isChecked())
     def pu3_change(self):
         self._logger.insert_text("pu3 {}\n".format("on" if self.ui.pu3_button.isChecked() else "off"))  
+        if not self._fake:
+            self._pi.pump(3, self.ui.pu3_button.isChecked())
 
     @property
     def open_tank_25(self)->bool:

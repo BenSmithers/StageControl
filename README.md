@@ -84,6 +84,10 @@ it should start up successfully.
 You should also now be able to control the LED board and the stage through the GUI.
 Test it out, try selecting different wavelengths and make sure it actually lights up and moves. 
 
+#### Setting up the Pumps and stuff
+
+This still needs some work, will add this soon.
+
 ### Starting data-taking
 
 Once the PMTs are powered on and the LED is turned on, try running the PicoScope 7 software and make sure you can see signal in the PMTs.
