@@ -247,7 +247,7 @@ class PipesWidget(QtWidgets.QWidget):
 
         temperatures = np.random.randn(2)*0.1 + 20
         temperatures[0] += self._ncalls
-        self._ncalls += 5
+        #self._ncalls += 5
 
         if self.ui.pu1_button.isChecked() and self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked() and self.ui.bv3_button.isChecked():
             self._ncalls -= 7
