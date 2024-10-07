@@ -68,7 +68,7 @@ class ControlWidget(QtWidgets.QWidget):
         tts = get_time_to_next_shift()
         self._updater_clock = QtCore.QTimer(self)
         self._updater_clock.timeout.connect(self.auto_update)
-        self._updater_clock.start(tts*1000)
+        self._updater_clock.start(int(tts*1000))
         print("{} hours until next shift".format(tts/3600))
 
     def send_alert(self, message, headline):
@@ -81,7 +81,7 @@ class ControlWidget(QtWidgets.QWidget):
     def auto_update(self):
         self._updater_clock.stop()
         self.update_emails()
-        self._updater_clock.start(8*3600*1000)
+        self._updater_clock.start(int(8*3600*1000))
 
     def update_emails(self):
         shifter1, shifter2 = get_current_addresses()
