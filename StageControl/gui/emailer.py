@@ -28,11 +28,22 @@ shift_file = os.path.join(
     "data",
     "shifter_data.csv"
 )
-def send_alert(warning_message, warning_headline="Something Wrong!"):
-    """
-        Lookup the current shifter from the CSV file, and email them with the provided warning data
-    """
-    now = time()
+
+def get_time_to_next_shift():
+    now = time() #+ 15*24*3600 + 5*3600    
+    email_data = np.loadtxt(shift_file, delimiter=",", dtype="str").T
+    
+    times = email_data[0].astype(float)
+    index = np.searchsorted(times, now)-1
+    if index<0:
+        index=0 
+    
+    return times[index+1] - now
+
+def get_current_addresses():
+    # this is the UTC time, but the shifter times are also adjusted to be UTC
+    # let's pretend it is 15 days from now  (22nd)
+    now = time() #+ 15*24*3600 + 5*3600    
     email_data = np.loadtxt(shift_file, delimiter=",", dtype="str").T
     
     times = email_data[0].astype(float)
@@ -41,12 +52,21 @@ def send_alert(warning_message, warning_headline="Something Wrong!"):
 
     index = np.searchsorted(times, now)-1
     if index<0:
-        index=0
+        index=0 
+
+    return shifter1[index], shifter2[index]
+
+def send_alert(warning_message, warning_headline="Something Wrong!"):
+    """
+        Lookup the current shifter from the CSV file, and email them with the provided warning data
+    """
+
+    shifter1, shifter2 = get_current_addresses()
     
-    _send_alert([shifter1[index],], warning_message, warning_headline)
+    send_alert_to([shifter1,], warning_message, warning_headline)
 
 
-def _send_alert(shifter_emails:'list[str]', warning_message, warning_headline="Something Wrong!"):
+def send_alert_to(shifter_emails:'list[str]', warning_message, warning_headline="Something Wrong!"):
     """
         Sends an email to the given email with provided messages
 
@@ -56,6 +76,11 @@ def _send_alert(shifter_emails:'list[str]', warning_message, warning_headline="S
     recipients = shifter_emails
     recipients.append(sender_email)
     for recipient in recipients:
+        if recipient=="":
+            continue
+        
+        print("DEBUG MODE SKIP {}".format(recipient))
+        continue 
         SCOPES = ['https://mail.google.com/']
 
         creds_file = os.path.join(os.path.dirname(__file__), "data","DONOTCOMMIT.json")

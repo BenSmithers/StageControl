@@ -8,7 +8,7 @@ from StageControl.LEDControl import LEDBoard
 from controlgui import Ui_Widget as gui 
 
 from datetime import datetime 
-from emailer import send_alert
+from emailer import get_current_addresses, send_alert_to, get_time_to_next_shift
 from warn_widg import WarnWidget, HelpWidget
 
 from constants import STAGE_USB, LED_BOARD_USB
@@ -62,6 +62,32 @@ class ControlWidget(QtWidgets.QWidget):
             sys.exit(1)    
         self.insert_text("Initialized GUI\n")
 
+        self.update_emails()
+        self.ui.shift_update.clicked.connect(self.update_emails)
+
+        tts = get_time_to_next_shift()
+        self._updater_clock = QtCore.QTimer(self)
+        self._updater_clock.timeout.connect(self.auto_update)
+        self._updater_clock.start(tts*1000)
+        print("{} hours until next shift".format(tts/3600))
+
+    def send_alert(self, message, headline):
+        if self.ui.shifter_one.text()!="":
+            self.insert_text("Sending email to {}\n".format(self.ui.shifter_one.text()))
+        if self.ui.shifter_two.text()!="":
+            self.insert_text("Sending email to {}\n".format(self.ui.shifter_two.text()))
+        send_alert_to([self.ui.shifter_one.text(), self.ui.shifter_two.text(), ], message, headline)
+
+    def auto_update(self):
+        self._updater_clock.stop()
+        self.update_emails()
+        self._updater_clock.start(8*3600*1000)
+
+    def update_emails(self):
+        shifter1, shifter2 = get_current_addresses()
+        self.ui.shifter_one.setText(shifter1)
+        self.ui.shifter_two.setText(shifter2)
+
     def insert_text(self, msg):
         now = datetime.now()
         data = open(self._logfile, 'a+')
@@ -80,7 +106,7 @@ class ControlWidget(QtWidgets.QWidget):
         self._button_timer.stop()
         self.ui.test_email.setEnabled(True)
     def test_email(self):
-        send_alert("This is just a test, and you received it!", "Success!")
+        self.send_alert("This is just a test, and you received it!", "Success!")
         self.ui.test_email.setEnabled(False)
         self._button_timer.start(10000)
 

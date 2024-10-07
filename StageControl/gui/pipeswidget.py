@@ -344,14 +344,15 @@ class PipesWidget(QtWidgets.QWidget):
             self.ui.temp_value_2.setStyleSheet("background-color:rgb(255,255,255)")
             self.ui.temp_value_1.setStyleSheet("background-color:rgb(255,255,255)")
             
-
-        if self.open_tank_75:
-            self.ui.pu3_button.setChecked(True)
-            self._draining_open_tank = True 
-        if self._draining_open_tank:
-            if not self.open_tank_25:
-                self.ui.pu3_button.setChecked(False)
-                self._draining_open_tank=False
+        # these should be automatic! 
+        if self._fake:
+            if self.open_tank_75:
+                self.ui.pu3_button.setChecked(True)
+                self._draining_open_tank = True 
+            if self._draining_open_tank:
+                if not self.open_tank_25:
+                    self.ui.pu3_button.setChecked(False)
+                    self._draining_open_tank=False
 
         self.timer.start(2500)
 
@@ -448,7 +449,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.sv2_button.setChecked(heat) 
         self._logger.insert_text(message + "\n")
         if not skip_email:
-            send_alert( message)
+            self._logger.send_alert( message, "Warning!")
         self.dialog = WarnWidget(parent=self,message=message)
         self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.dialog.exec_()
