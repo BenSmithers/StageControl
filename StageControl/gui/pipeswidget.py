@@ -173,10 +173,17 @@ class PipesWidget(QtWidgets.QWidget):
             self.alarm_timer.stop()
 
     def _generate_testdata(self):
+        """
+            This is set to emulate the operation of the water filtration as it was at TRIUMF. 
+            I don't know how applicable this is to how the setup will be at CERN 
+
+            It's probably not perfect, but it's good enough 
+        """
         flows = np.array([
             0,0,0,0,0
         ])
-        full = False
+        full = False 
+        # This is the chamber drain pump. If it's checked, and there's water in the chamber, then water flows through flow meters 4 and 5
         if self.ui.pu2_button.isChecked():
             if self._fake_chamber>0:
                 flows[3] = 1
@@ -184,6 +191,12 @@ class PipesWidget(QtWidgets.QWidget):
             self._fake_chamber -= 10
             
         """
+            This section handles flow through flowmeters 1, 2, 3, and 5 
+
+            Basically, if sv1, sv2, and the pump are on (if the last one is required), we will get flow through meters 1 and 5. 
+            But then if bv6 is on, the chamber starts to fill. Flow meter 5 stops seeing flow, but meter 2 does 
+            If the chamber is filled, then the open tank starts to fill. Then flow meter 3 sees flow too 
+
             To have flow, you need sv1 and sv2 to be flowing
             If the pump is required, you also need PU1 turned on 
                 PR | not PR | sv2 |  not PR or sv2  
@@ -207,7 +220,8 @@ class PipesWidget(QtWidgets.QWidget):
                     self._fake_open_tank_lvl += self._fake_chamber-50
                     self._fake_chamber = 50
 
-
+        # if pump3 is on and there's water in the fake open tank, then we expect flow in flow meter 5 
+        # we then have some logic to fake-drain the fake open tank 
         if self.ui.pu3_button.isChecked() and self._fake_open_tank_lvl>0:
             flows[4] = 1
             self._fake_open_tank_lvl-=15
@@ -216,30 +230,34 @@ class PipesWidget(QtWidgets.QWidget):
         if self._fake_chamber<0:
             self._fake_chamber = 0
 
-
+        # make up some fake pressures that go down
+        # but only show pressure if 
         flows = flows.astype(int)
         pressures = 20 + np.random.randn(4)*3
         scales = np.array([30, 5, -5, -10])
         if not self.ui.sv1_button.isChecked() or (not ((not PUMP_REQUIRED) or self.ui.pu1_button.isChecked())):
             pressures*=0
             scales*=0
-        if False: # full:
+        # used to fake an alarm
+        if False and full:
             pressures[0] *= 20
 
         pressures = pressures + scales
 
-
+        # sample some temperatures 
+        # have a counter to steadily ramp up the UV sterilizer heater 
         temperatures = np.random.randn(2)*0.1 + 20
         temperatures[0] += self._ncalls
         #self._ncalls += 5
 
+        # Water will flow over the uv sterilizer in this case, so we simulate it cooling down here 
+        # note - this doesn't account for whether the pump needs to be on... 
         if self.ui.pu1_button.isChecked() and self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked() and self.ui.bv3_button.isChecked():
             self._ncalls -= 7
             if self._ncalls <0 :
                 self._ncalls = 0
 
         
-
         return pressures, flows, temperatures
 
     def disable_all(self):
@@ -298,8 +316,11 @@ class PipesWidget(QtWidgets.QWidget):
         if self._fake:
             pressures, flows, temperature = self._generate_testdata()
         else:
+            # NOTE: there's a problem where the pi will hang while doing this sometimes. Need to find a way to catch that. 
+            # will likely need some kind of threading :(
             pressures, flows, temperature = self._pi.data() 
 
+        ### -------------------------------- UPDATE GUI --------------------------------
         flow_bar = flows*90+5
         self.ui.flow1.setValue(flow_bar[0])
         self.ui.flow2.setValue(flow_bar[1])
@@ -315,14 +336,23 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]))
         self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3]))
 
-        self._alarm = pressures>PRESSURE_THRESH
+        ### -------------------------------- Check for Alarms --------------------------------
+
+        self._alarm = pressures>PRESSURE_THRESH # all of the pressures 
         self._alarm=  self._alarm.tolist()
-        self._alarm.append(temperature[0] > TEMP_MAX)
-        self._alarm.append(temperature[1] > TEMP_MAX)
+        self._alarm.append(temperature[0] > TEMP_MAX) # uv sterilizer temperature 
+        self._alarm.append(temperature[1] > TEMP_MAX) # water temperature
+        
+        # if _any_ alarm is True, something is wrong 
+        # we don't want to spam alarm messages, so we keep track of if an alarm is sounding between updates 
         if any(self._alarm):
+            # this was thrown last update (or earlier)
             if self._alert_thrown:
                 pass 
             else:
+                # craft an alert message, make a note of what kind of problem this is 
+                # a heat-related problem has us wanting to move water over the UV sterilizer, a pressure problem has us wanting to shut the valves off 
+
                 self._alert_thrown = True 
                 message = "Warning! The water pressure is dangerously high! Shutting off input valve and chamber valve"
                 heat = False 
@@ -332,9 +362,12 @@ class PipesWidget(QtWidgets.QWidget):
                 if self._alarm[5]:
                     heat = True 
                     message = "Warning! The water temperature is dangerously high!"
+
+                # call panic. This sends an email, makes a pop-up, and tries to fix the problem
                 self.panic(message, heat)                
                 self.alarm_timer.start(250) # start flashing the gui red and white
         else:
+            # no problems. Make sure the gui looks ok and that no alarm is sounding
             self._alert_thrown = False 
             self.alarm_timer.stop()
             self.ui.lcdNumber.setStyleSheet("background-color:rgb(255,255,255)")
@@ -344,7 +377,7 @@ class PipesWidget(QtWidgets.QWidget):
             self.ui.temp_value_2.setStyleSheet("background-color:rgb(255,255,255)")
             self.ui.temp_value_1.setStyleSheet("background-color:rgb(255,255,255)")
             
-        # these should be automatic! 
+        # these are automatic! 
         if self._fake:
             if self.open_tank_75:
                 self.ui.pu3_button.setChecked(True)
@@ -453,6 +486,11 @@ class PipesWidget(QtWidgets.QWidget):
         self.dialog = WarnWidget(parent=self,message=message)
         self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.dialog.exec_()
+
+    """
+        Boilerplate stuff. Whenever one of these is changed the function gets called. 
+        In non-test mode, the rhaspberry pi is told to do things
+    """
 
     def bv1_change(self):
         self._logger.insert_text("bv1 {}\n".format("on" if self.ui.bv1_button.isChecked() else "off")) 

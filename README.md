@@ -5,6 +5,18 @@ If there is no terminal open, press `Ctrl+Alt+T` to launch one.
 Then, execute the `launch.sh` bash script. 
 This will start the water quality monitoring GUI. 
 
+## Starting Your Shift
+
+On the `control` tab, verify that the emails are correct for the two people currently on shift. 
+You may need to manually press "update emails" if the line editor did not automatically update. 
+If an address is not accurate, edit it. 
+
+Once you've verified the addresses are accurate, click "Test Alert Email" and you should receive a test email from the wcte alert bot shortly. 
+If you don't receive an email, be sure to check your spam folder.
+
+If you want to opt-out of receiving the emails, just replace the auto-populated entry of your address with a blank line. 
+You will _only_ receive an email when there is a serious issue which may require prompt action; this is not necessarily recommended. 
+
 ## First time setup 
 
 You will need a monitor and a keyboard for first-time setup. A keyboard is optional. 
@@ -102,8 +114,6 @@ and uncomment the last two lines.
 Wait a few minutes; once the time reaches a minute divisible by three, you should hear the picoscope click. 
 That means it's taking data now. Good! 
 
-
-
 ## Changing to a different LED 
 
 Once the GUI has been launched, navigate to the `Control` tab. 
@@ -150,7 +160,8 @@ Then, contact [Add name and contact later so it's not on github].
 
 ## You get a high-temperature warning. 
 
-This is likely the UV sterilizer. Turn this off, then contact [Add name and contact later so it's not on github]. 
+This is likely the UV sterilizer. Power the UV sterilizer down and then contact [Add name and contact later so it's not on github]. 
+Note: you will probably have to physically flip a switch or unplug a cable. You can not power up or power down the UV sterilizer through the GUI.
 
 ## You get a [...] not found error
 
