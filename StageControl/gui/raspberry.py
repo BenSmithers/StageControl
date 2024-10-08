@@ -6,18 +6,26 @@ from pexpect import pxssh
 from StageControl.gui.constants import HOST, USER, KEY_LOC
 import time 
 class PiConnect:
+    """
+        TODO 
+
+        update the prompt to be correct 
+    """
     def __init__(self):
         self._connection = pxssh.pxssh() 
-
         self._connection.login(
             server = HOST,
             user = USER,
-            ssh_key = KEY_LOC
+            ssh_key = KEY_LOC,
+            auto_prompt_reset=False
         )
 
         self.send_receive("cd wmsLabview")
         time.sleep(1)
-        self.send_receive("python3 wms_main.py")
+        self._connection.sendline("python3 wms_main.py")
+        # update prompt now 
+        self._connection.set_unique_prompt()
+        self._connection.PROMT = "" # reg ex
         time.sleep(1)
 
     def send_receive(self, what):
