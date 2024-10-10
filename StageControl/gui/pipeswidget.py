@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView 
 from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtCore import pyqtSlot, QThreadPool, pyqtSignal
 
 from warn_widg import WarnWidget
 
@@ -11,7 +12,6 @@ import pexpect
 from emailer import send_alert
 import os 
 
-from StageControl.gui.raspberry import PiConnect
 from StageControl.gui.constants import PRESSURE_THRESH,TEMP_MAX
 SCALE = 5.0
 PUMP_REQUIRED = True
@@ -22,22 +22,18 @@ class Clicker(QGraphicsScene):
         self.parent = parent 
         self._parent_window = parent_window
 
-class PipesWidget(QtWidgets.QWidget):    
+class PipesWidget(QtWidgets.QWidget): 
+    # signals used to communicate with the Pi-manager whenever we click a button 
+    pump_signal = pyqtSignal(int, bool)
+    sv_signal = pyqtSignal(int, bool)
+    bv_signal = pyqtSignal(int, bool)
     def __init__(self, parent:QWidget,  logger, fake=False):
         QtWidgets.QWidget.__init__(self, parent)
 
-        self._fake = fake 
+        self._fake = False
         self.ui = gui()
         self.ui.setupUi(self)
         self._logger = logger
-
-        if not fake:
-            try:
-                self._pi = PiConnect()
-            except pexpect.ExceptionPexpect as e:
-                self.panic("{}".format(e) + " for water monitoring", heat=False, skip_email=True)
-            except Exception as e:
-                self.panic("{}".format(e), heat=False, skip_email=True)
 
         self.scene = Clicker(self.ui.graphicsView, self)
         self.ui.graphicsView.setScene(self.scene)
@@ -90,6 +86,9 @@ class PipesWidget(QtWidgets.QWidget):
         self._alert_thrown = False 
 
         self.update()
+
+        #self.thread_man = QThreadPool(self)
+        #self.setupThread()
 
 
     def stop_button(self):
@@ -308,35 +307,63 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.fill_filter.setEnabled(True)
         self.ui.fill_osmosis.setEnabled(True)
 
-    def update(self):
+    @pyqtSlot(dict)
+    def data_received(self, data):
         """
-            Access the latest data, update the gui, 
-            check for warnings, proceed with automation
-        """
-        if self._fake:
-            pressures, flows, temperature = self._generate_testdata()
-        else:
-            # NOTE: there's a problem where the pi will hang while doing this sometimes. Need to find a way to catch that. 
-            # will likely need some kind of threading :(
-            pressures, flows, temperature = self._pi.data() 
+            This is a slot that is accessed by the SSH manager (or really anything)
+            This must be called with the new data.
 
+            The new data is essentially just stored in the gui until its accessed later.
+        """
+        flows = data["flow"]
+        pressures = data["pressure"]
+        temperature = data["temperature"]
+
+        # NOTE: there's a problem where the pi will hang while doing this sometimes. Need to find a way to catch that. 
+        # will likely need some kind of threading :(
         ### -------------------------------- UPDATE GUI --------------------------------
-        flow_bar = flows*90+5
+        flow_bar = np.array(flows)*90+5
         self.ui.flow1.setValue(flow_bar[0])
         self.ui.flow2.setValue(flow_bar[1])
         self.ui.flow3.setValue(flow_bar[2])
         self.ui.flow4.setValue(flow_bar[3])
         self.ui.flow5.setValue(flow_bar[4])
 
-        self.ui.temp_value_1.setText("{:.2f} C".format(temperature[0]))
-        self.ui.temp_value_2.setText("{:.2f} C".format(temperature[1]))
+        self.ui.temp_value_1.setText("{:.2f}".format(temperature[0]))
+        self.ui.temp_value_2.setText("{:.2f}".format(temperature[1]))
 
         self.ui.lcdNumber.setText("{:.2f}".format(pressures[0]))
         self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]))
         self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]))
-        self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3]))
+        self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3])) 
+
+    def update(self):
+        """
+            Access the latest data from the gui
+            check for warnings, proceed with automation
+        """
+        if self._fake:
+            pressures, flows, temperature = self._generate_testdata()
+        #else:
 
         ### -------------------------------- Check for Alarms --------------------------------
+
+        pressures = np.array([float(self.ui.lcdNumber.text()),
+                              float(self.ui.lcdNumber_4.text()),
+                              float(self.ui.lcdNumber_3.text()),
+                              float(self.ui.lcdNumber_2.text())
+                              ])
+        flows = np.array([
+                            self.ui.flow1.value() > 50,
+                            self.ui.flow2.value() > 50,
+                            self.ui.flow3.value() > 50,
+                            self.ui.flow4.value() > 50,
+                            self.ui.flow5.value() > 50
+        ])
+        temperature = np.array([
+            float(self.ui.temp_value_1.text()),
+            float(self.ui.temp_value_2.text())
+        ])
 
         self._alarm = pressures>PRESSURE_THRESH # all of the pressures 
         self._alarm=  self._alarm.tolist()
@@ -493,51 +520,40 @@ class PipesWidget(QtWidgets.QWidget):
     """
 
     def bv1_change(self):
-        self._logger.insert_text("bv1 {}\n".format("on" if self.ui.bv1_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.bv(1, self.ui.bv1_button.isChecked())
+            self.bv_signal.emit(1, self.ui.bv1_button.isChecked())
     def bv2_change(self):
-        self._logger.insert_text("bv2 {}\n".format("on" if self.ui.bv2_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.bv(2, self.ui.bv2_button.isChecked())
+            self.bv_signal.emit(2, self.ui.bv2_button.isChecked())
     def bv3_change(self):
-        self._logger.insert_text("bv3 {}\n".format("on" if self.ui.bv3_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.bv(3, self.ui.bv3_button.isChecked())
+            self.bv_signal.emit(3, self.ui.bv3_button.isChecked())
     def bv4_change(self):
-        self._logger.insert_text("bv4 {}\n".format("on" if self.ui.bv4_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.bv(4, self.ui.bv4_button.isChecked())
+            self.bv_signal.emit(4, self.ui.bv4_button.isChecked())
     def bv5_change(self):
-        self._logger.insert_text("bv5 {}\n".format("on" if self.ui.bv5_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.bv(5, self.ui.bv5_button.isChecked())
+            self.bv_signal.emit(5, self.ui.bv5_button.isChecked())
     def bv6_change(self):
-        self._logger.insert_text("bv6 {}\n".format("on" if self.ui.bv6_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.bv(6, self.ui.bv6_button.isChecked())
+            self.bv_signal.emit(6, self.ui.bv6_button.isChecked())
 
     def sv1_change(self):
-        self._logger.insert_text("sv1 {}\n".format("on" if self.ui.sv1_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.sv(1, self.ui.sv1_button.isChecked())
+            self.sv_signal.emit(1, self.ui.sv1_button.isChecked())
     def sv2_change(self):
-        self._logger.insert_text("sv2 {}\n".format("on" if self.ui.sv2_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.sv(2, self.ui.sv2_button.isChecked())
+            self.sv_signal.emit(2, self.ui.sv2_button.isChecked())
 
     def pu1_change(self):
-        self._logger.insert_text("pu1 {}\n".format("on" if self.ui.pu1_button.isChecked() else "off")) 
         if not self._fake:
-            self._pi.pump(1, self.ui.pu1_button.isChecked())
+            self.pump_signal.emit(1, self.ui.pu1_button.isChecked())
     def pu2_change(self):
-        self._logger.insert_text("pu2 {}\n".format("on" if self.ui.pu2_button.isChecked() else "off"))  
         if not self._fake:
-            self._pi.pump(2, self.ui.pu2_button.isChecked())
+            self.pump_signal.emit(2, self.ui.pu2_button.isChecked())
     def pu3_change(self):
-        self._logger.insert_text("pu3 {}\n".format("on" if self.ui.pu3_button.isChecked() else "off"))  
         if not self._fake:
-            self._pi.pump(3, self.ui.pu3_button.isChecked())
+            self.pump_signal.emit(3, self.ui.pu3_button.isChecked())
 
     @property
     def open_tank_25(self)->bool:
