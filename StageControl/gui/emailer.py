@@ -79,8 +79,6 @@ def send_alert_to(shifter_emails:'list[str]', warning_message, warning_headline=
         if recipient=="":
             continue
         
-        print("DEBUG MODE SKIP {}".format(recipient))
-        continue 
         SCOPES = ['https://mail.google.com/']
 
         creds_file = os.path.join(os.path.dirname(__file__), "data","DONOTCOMMIT.json")
