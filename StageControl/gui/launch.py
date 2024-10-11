@@ -128,6 +128,7 @@ class main_window(QMainWindow):
             self.ui.pipes.bv_signal.connect(self.worker_thread.bv)
             self.ui.pipes.sv_signal.connect(self.worker_thread.sv)
             self.killConnection.connect(self.worker_thread.finish)
+            self.ui.pipes.ui.relaunch_button.clicked.connect(self.worker_thread.relaunch_python)
 
             # used for status updates
             self.worker_thread.message_signal.connect(self.thread_message)

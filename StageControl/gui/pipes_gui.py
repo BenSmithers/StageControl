@@ -198,6 +198,11 @@ class Ui_Form(object):
         self.formLayout.setItem(13, QtWidgets.QFormLayout.FieldRole, spacerItem4)
         self.horizontalLayout.addLayout(self.formLayout)
 
+        self.relaunch_button = QtWidgets.QPushButton(Form)
+        self.relaunch_button.setText("Relaunch Interface")
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.relaunch_button)
+        
+
         self.flow1.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.flow2.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.flow3.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)

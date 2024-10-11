@@ -26,6 +26,13 @@ class PiConnect(QObject):
         super(QObject, self).__init__()
 
     @pyqtSlot()
+    def relaunch_python(self):
+        self.message_signal.emit("Attempting to relaunch wms_main\n")
+        self.send_receive("cd ~/wmsLabview")        
+        self.send_receive("python3 wms_main.py")
+        self.message_signal.emit("Attempted")
+
+    @pyqtSlot()
     def finish(self):
         """
             Use a signal-slot interface to handle the threads appropriately 
@@ -53,7 +60,7 @@ class PiConnect(QObject):
         self._connection.set_unique_prompt()
         self.send_receive("cd wmsLabview")
         self.message_signal.emit("starting wms_main\n")
-        self._connection.sendline("python3 wms_main.py")
+        self.send_receive("python3 wms_main.py")
         self.message_signal.emit("started!\n")
 
         self.data_timer = QTimer()
@@ -76,13 +83,14 @@ class PiConnect(QObject):
         if not success:
             self.message_signal.emit("Timeout waiting for response to data request\n")
         
+        raw_response = self._connection.before.decode('UTF-8').split("\r")
         try:
-            raw_response = self._connection.before.decode('UTF-8').split("\r")
+            
             #print("** raw response ", raw_response)
             raw_data = raw_response[-2]
             #print("**** raw data ", raw_data)
             if "Pressure" not in raw_data:
-                return
+                raise KeyError("No `Pressure` in response")
             data_list = ast.literal_eval(raw_data.strip())
             pressure = np.array([row[0] for row in data_list[1:]])
             flow = np.array([row[1] for row in data_list[1:]]).astype(bool)
@@ -93,10 +101,11 @@ class PiConnect(QObject):
                 "pressure":pressure,
                 "temperature":temperature,
             }        
-        except:
-            self.message_signal.emit("Failed to parse response {}".format(raw_response)) 
+            self.data_signal.emit(ret_dat)
+        except Exception as e:
+            self.message_signal.emit("Failed to parse response {}\n".format(raw_response)) 
             
-        self.data_signal.emit(ret_dat)
+        
 
     
     @pyqtSlot(int, bool)
