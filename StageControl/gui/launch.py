@@ -31,6 +31,7 @@ class USBWorker(QObject):
         self._conn = ELLxConnection(self._stage_path, fake=fake)
         self._board = LEDBoard(self._led_path, fake=fake)
         self._board.enable()
+        self.StatusSignal.emit("Initialized USB Connections")
 
 
     @pyqtSlot(bool)
@@ -48,6 +49,13 @@ class USBWorker(QObject):
     def activate_led(self, led_no):
         msg=self._board.activate_led(led_no)
         self.StatusSignal.emit(msg)
+
+    @pyqtSlot()
+    def disable_board(self):
+        self._board.disable()
+        self.StatusSignal.emit("LED - L0\n")
+        self.StatusSignal.emit("LED - D\n")
+
 
     @pyqtSlot(float)
     def move_absolute(self, position):
@@ -104,6 +112,7 @@ class main_window(QMainWindow):
             self.ui.control_widget.adc_signal.connect(self.usb_worker_thread.set_adc)
             self.ui.control_widget.freq_signal.connect(self.usb_worker_thread.set_freq)
             self.ui.control_widget.move_signal.connect(self.usb_worker_thread.move_absolute)
+            self.ui.control_widget.ui.disable_led.clicked.connect(self.usb_worker_thread.disable_board)
             self.initialize_usb.connect(self.usb_worker_thread.initialize)
             self.initialize_usb.emit()
         except Exception as e:

@@ -76,23 +76,26 @@ class Ui_Widget(object):
         self.positionLbl.setObjectName("positionLbl")
         self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.positionLbl)
 
+        self.disable_led = QtWidgets.QPushButton(Widget)
+        self.disable_led.setObjectName("disable_led")
+        self.formLayout.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.disable_led)
+        self.disable_led.setText("Disable LED")
+
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.formLayout.setItem(5,  QtWidgets.QFormLayout.FieldRole, spacerItem)
-
-
+        self.formLayout.setItem(6,  QtWidgets.QFormLayout.FieldRole, spacerItem)
 
         self.shift_update = QtWidgets.QPushButton(Widget)
         self.shift_update.setObjectName("shift_update")
         self.shift_update.setText("Update Emails")
-        self.formLayout.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.shift_update)
+        self.formLayout.setWidget(7, QtWidgets.QFormLayout.FieldRole, self.shift_update)
         self.shift_two_lbl =QtWidgets.QLabel(Widget)
         self.shift_two_lbl.setObjectName("shift_two_lbl")
         self.shift_two_lbl.setText("Shifter Email:")
         self.shift_one_lbl =QtWidgets.QLabel(Widget)
         self.shift_one_lbl.setObjectName("shift_one_lbl")
         self.shift_one_lbl.setText("Shifter Email:")
-        self.formLayout.setWidget(7,QtWidgets.QFormLayout.LabelRole, self.shift_one_lbl)
-        self.formLayout.setWidget(8,QtWidgets.QFormLayout.LabelRole, self.shift_two_lbl)
+        self.formLayout.setWidget(8,QtWidgets.QFormLayout.LabelRole, self.shift_one_lbl)
+        self.formLayout.setWidget(9,QtWidgets.QFormLayout.LabelRole, self.shift_two_lbl)
 
         self.shifter_one = QtWidgets.QLineEdit(Widget)
         self.shifter_one.setObjectName("shifter_one")
@@ -103,12 +106,14 @@ class Ui_Widget(object):
         self.shifter_two.setObjectName("shifter_two")
         self.shifter_two.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.shifter_two.setMinimumSize(150,15)
-        self.formLayout.setWidget(7,QtWidgets.QFormLayout.FieldRole, self.shifter_one)
-        self.formLayout.setWidget(8,QtWidgets.QFormLayout.FieldRole, self.shifter_two)
+        self.formLayout.setWidget(8,QtWidgets.QFormLayout.FieldRole, self.shifter_one)
+        self.formLayout.setWidget(9,QtWidgets.QFormLayout.FieldRole, self.shifter_two)
+
+
 
         self.test_email = QtWidgets.QPushButton(Widget)
         self.test_email.setObjectName("test_email")
-        self.formLayout.setWidget(9, QtWidgets.QFormLayout.FieldRole, self.test_email)
+        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.test_email)
 
         self.horizontalLayout.addLayout(self.formLayout)
         self.verticalLayout = QtWidgets.QVBoxLayout()
