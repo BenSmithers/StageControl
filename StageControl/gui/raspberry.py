@@ -6,7 +6,7 @@ from pexpect import pxssh
 import numpy as np 
 import time 
 import ast
-from constants import HOST, USER, PASSWORD, PORT
+from constants import HOST, USER, PASSWORD, PORT, KEY 
 
 from PyQt5.QtCore import QRunnable , QObject, pyqtSignal, pyqtSlot, QTimer 
 
@@ -20,13 +20,20 @@ class PiConnect(QObject):
         An initialize method is used to signal this thread the need to open the connection
     """
     data_signal = pyqtSignal(dict)
-    message_siganl = pyqtSignal(str)
+    message_signal = pyqtSignal(str)
 
     def __init__(self):
         super(QObject, self).__init__()
 
+    @pyqtSlot()
     def finish(self):
+        """
+            Use a signal-slot interface to handle the threads appropriately 
+        """
+        self.data_timer.killTimer()
         self._connection.sendline("exit")
+        # make sure it exits by waiting for normal prompt
+        self._connection.prompt()
         time.sleep(1)
         return 0
         
@@ -36,29 +43,30 @@ class PiConnect(QObject):
         self._connection.login(
             server = HOST,
             username = USER,
+            #ssh_key=KEY,
             password = PASSWORD,
             port=PORT,
             auto_prompt_reset=False
         )
         
-        self.message_siganl.emit("changing to labview folder\n")
+        self.message_signal.emit("changing to labview folder\n")
         # update prompt now 
         self._connection.set_unique_prompt()
         self._connection.PROMT = "^\$" # reg ex
         self.send_receive("cd wmsLabview")
-        time.sleep(1)
-        self.message_siganl.emit("starting wms_main\n")
+        self.message_signal.emit("starting wms_main\n")
         self._connection.sendline("python3 wms_main.py")
-        self.message_siganl.emit("started!\n")
+        self.message_signal.emit("started!\n")
 
-        time.sleep(1)
         self.data_timer = QTimer()
         self.data_timer.timeout.connect(self.data)
         self.data_timer.start(2500)
 
     def send_receive(self, what):
         self._connection.sendline(what)
-        self._connection.prompt()
+        success = self._connection.prompt()
+        if not success:
+            self.message_signal.emit("Timeout waiting for response to {}\n".format(what))
         # get response, split by carriage return 
         raw = self._connection.before.decode('UTF-8').split("\r")
         return raw [2]
@@ -66,13 +74,11 @@ class PiConnect(QObject):
     def data(self):
         #raw_response = self.send_receive("data")
         self._connection.sendline("data")
-        index = self._connection.expect(['request', pexpect.EOF, pexpect.TIMEOUT])
-        #self._connection.prompt()
-        if index:
-            raw_response = ''
-            print("No response")
-            return
-        if index == 0:            
+        success = self._connection.prompt()
+        if not success:
+            self.message_signal.emit("Timeout waiting for response to data request\n")
+        
+        try:
             raw_response = self._connection.before.decode('UTF-8').split("\r")
             #print("** raw response ", raw_response)
             raw_data = raw_response[-2]
@@ -81,7 +87,7 @@ class PiConnect(QObject):
                 return
             data_list = ast.literal_eval(raw_data.strip())
             pressure = np.array([row[0] for row in data_list[1:]])
-            flow = np.array([row[1] for row in data_list[1:]])
+            flow = np.array([row[1] for row in data_list[1:]]).astype(bool)
             temperature = np.array([row[2] for row in data_list[1:]])
             #raise NotImplementedError("Add data parser!")
             ret_dat = {
@@ -89,7 +95,10 @@ class PiConnect(QObject):
                 "pressure":pressure,
                 "temperature":temperature,
             }        
-            self.data_signal.emit(ret_dat)
+        except:
+            self.message_signal.emit("Failed to parse response {}".format(raw_response)) 
+            
+        self.data_signal.emit(ret_dat)
 
     
     @pyqtSlot(int, bool)
@@ -99,7 +108,7 @@ class PiConnect(QObject):
         self.send_receive("pu{} {}".format(
             number, "on" if on else "off"
         ))
-        self.message_siganl.emit("pu{} {} signal sent\n".format(number, "on" if on else "off"))
+        self.message_signal.emit("pu{} {} signal sent\n".format(number, "on" if on else "off"))
         time.sleep(1)
 
     @pyqtSlot(int, bool)
@@ -109,7 +118,7 @@ class PiConnect(QObject):
         self.send_receive("sv{} {}".format(
             number, "on" if on else "off"
         ))
-        self.message_siganl.emit("sv{} {} signal sent\n".format(number, "on" if on else "off"))
+        self.message_signal.emit("sv{} {} signal sent\n".format(number, "on" if on else "off"))
         time.sleep(1)   
 
     @pyqtSlot(int, bool)
@@ -119,5 +128,5 @@ class PiConnect(QObject):
         self.send_receive("bv{} {}".format(
             number, "on" if on else "off"
         ))
-        self.message_siganl.emit("bv{} {} signal sent\n".format(number, "on" if on else "off"))
+        self.message_signal.emit("bv{} {} signal sent\n".format(number, "on" if on else "off"))
         time.sleep(1)

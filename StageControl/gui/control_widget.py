@@ -1,20 +1,23 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import  QWidget
+from PyQt5.QtCore import pyqtSlot, pyqtSignal
 import sys 
 import os 
 
-from StageControl.ELLxControl import ELLxConnection
-from StageControl.LEDControl import LEDBoard
 from controlgui import Ui_Widget as gui 
 
 from datetime import datetime 
 from emailer import get_current_addresses, send_alert_to, get_time_to_next_shift
 from warn_widg import WarnWidget, HelpWidget
 
-from constants import STAGE_USB, LED_BOARD_USB
 
 class ControlWidget(QtWidgets.QWidget):
-    def __init__(self, parent:QWidget, fake=False):
+    led_signal = pyqtSignal(int)
+    adc_signal = pyqtSignal(int)
+    freq_signal = pyqtSignal(bool)
+    move_signal = pyqtSignal(float)
+    
+    def __init__(self, parent:QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = gui()
         self.ui.setupUi(self)
@@ -34,32 +37,10 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_locations.append(1)
         self._led_locations.append(7)
 
-        failure = False 
-        try:
-            self._conn = ELLxConnection(STAGE_USB, fake=fake)
-        except Exception as e:
-            self.dialog = WarnWidget(parent=self,message="Critical Error! {}".format(e))
-            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-            self.dialog.ui.buttonBox.helpRequested.connect(self.help)
-            self.dialog.exec_() 
-            
-            failure = True 
+        self._button_timer =  QtCore.QTimer(self)
+        self._button_timer.timeout.connect(self._enable_button)
 
-        try:
-            self._board = LEDBoard(LED_BOARD_USB, fake=fake)
-            self._board.enable()
 
-            self._button_timer =  QtCore.QTimer(self)
-            self._button_timer.timeout.connect(self._enable_button)
-        except Exception as e:
-            self.dialog = WarnWidget(parent=self,message="Critical Error! {}".format(e))
-            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-            self.dialog.ui.buttonBox.helpRequested.connect(self.help)
-            self.dialog.exec_() 
-            failure = True 
-
-        if failure:
-            sys.exit(1)    
         self.insert_text("Initialized GUI\n")
 
         self.update_emails()
@@ -70,6 +51,7 @@ class ControlWidget(QtWidgets.QWidget):
         self._updater_clock.timeout.connect(self.auto_update)
         self._updater_clock.start(int(tts*1000))
         print("{} hours until next shift".format(tts/3600))
+
 
     def send_alert(self, message, headline):
         if self.ui.shifter_one.text()!="":
@@ -88,7 +70,11 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.shifter_one.setText(shifter1)
         self.ui.shifter_two.setText(shifter2)
 
+    @pyqtSlot(str)
     def insert_text(self, msg):
+        if "\n" not in msg:
+            msg = msg +"\n"
+
         now = datetime.now()
         data = open(self._logfile, 'a+')
         data.write("{} : {}".format(now, msg))
@@ -110,17 +96,12 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.test_email.setEnabled(False)
         self._button_timer.start(10000)
 
-    def set_freq(self):
-        if self.ui.rate_combo.currentIndex()==0:
-            msg=self._board.set_slow_rate()
-        else:
-            msg=self._board.set_fast_rate()
-        self.insert_text(msg)
+    def set_freq(self):   
+        self.freq_signal.emit(self.ui.rate_combo.currentIndex()==0)
 
     def set_adc(self):
         new_value = self.ui.adc_spin.value()
-        msg= self._board.set_adc(new_value)
-        self.insert_text(msg)
+        self.adc_signal.emit(new_value)
 
     def wave_combo_change(self):
         index_no = self.ui.waveCombo.currentIndex()
@@ -130,8 +111,7 @@ class ControlWidget(QtWidgets.QWidget):
         index_no = self.ui.waveCombo.currentIndex()
         position = self._led_locations[index_no]
 
-        msg=self._board.activate_led(index_no+1)
-        self.insert_text(msg)
+        self.led_signal.emit(index_no+1)        
         self.set_position(position) 
         
 
@@ -141,25 +121,26 @@ class ControlWidget(QtWidgets.QWidget):
 
     def set_position(self, position):
         self.ui.positionSpin.setValue(position)
+        self.move_signal.emit(position)
 
-        packet = self._conn.move_absolute(position)
-
+    @pyqtSlot(dict)
+    def process_response(self, packet):
         self.insert_text(packet["call"].decode())
         self.insert_text(packet["response"].decode() +"\n")
         data = packet["data"]
         if "PO" in packet["response"].decode():
             self.ui.positionLbl.setText("{:.4f} mm".format(data))
-        if "GS" in packet["response"].decode():
+        elif "GS" in packet["response"].decode():
             self.insert_text("GS Status response: {}\n".format(data)) 
 
             self.dialog = WarnWidget(parent=self,message="Notice! Linear stage returned status: {}".format(data))
             self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
             self.dialog.ui.buttonBox.helpRequested.connect(self.help)
             self.dialog.exec_() 
-        if "IN" in packet["response"].decode():
+        elif "IN" in packet["response"].decode():
             for entry in data:
                 self.insert_text("Begin Info Response Dump\n")
                 self.insert_text("    {}\n".format(entry))
         else:
             self.insert_text("Unexpected response: \n")
-            self.insert_text("    {}\n".format(data))
+            self.insert_text("    {}\n".format(packet["response"]))
