@@ -80,6 +80,7 @@ class ControlWidget(QtWidgets.QWidget):
         data.write("{} : {}".format(now, msg))
         data.close()
         self.ui.textBrowser.insertPlainText("{} : {}".format(now, msg))
+        self.ui.textBrowser.verticalScrollBar().setValue(self.ui.textBrowser.verticalScrollBar().maximumHeight())
 
 
     def help(self):
@@ -126,7 +127,9 @@ class ControlWidget(QtWidgets.QWidget):
     @pyqtSlot(dict)
     def process_response(self, packet):
         self.insert_text(packet["call"].decode())
-        self.insert_text(packet["response"].decode() +"\n")
+        self.insert_text(packet["response"].decode())
+        if "\n" not in packet["response"].decode():
+            self.insert_text("\n")
         data = packet["data"]
         if "PO" in packet["response"].decode():
             self.ui.positionLbl.setText("{:.4f} mm".format(data))
