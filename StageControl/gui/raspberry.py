@@ -51,7 +51,6 @@ class PiConnect(QObject):
         self.message_signal.emit("changing to labview folder\n")
         # update prompt now 
         self._connection.set_unique_prompt()
-        self._connection.PROMT = "^\$" # reg ex
         self.send_receive("cd wmsLabview")
         self.message_signal.emit("starting wms_main\n")
         self._connection.sendline("python3 wms_main.py")
