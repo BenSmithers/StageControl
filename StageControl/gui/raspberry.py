@@ -30,11 +30,10 @@ class PiConnect(QObject):
         """
             Use a signal-slot interface to handle the threads appropriately 
         """
-        self.data_timer.killTimer()
+        self.data_timer.stop()
         self._connection.sendline("exit")
         # make sure it exits by waiting for normal prompt
         self._connection.prompt()
-        time.sleep(1)
         return 0
         
     @pyqtSlot()

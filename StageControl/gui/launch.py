@@ -9,6 +9,7 @@ from mainwindow import Ui_MainWindow as gui
 from StageControl.gui.raspberry import PiConnect
 from warn_widg import WarnWidget
 import os 
+import time 
 
 # self.parent.scene.get_system(hid)
 
@@ -148,6 +149,7 @@ class main_window(QMainWindow):
 
             self.killConnection.emit() # allow the PiConnect object to clean itself up
             # tell it to quit and wait for it to quit 
+            time.sleep(2.5)
             self.thread_man.quit()
             self.thread_man.wait()
             # tell the _other_ one to quit, and then wait for it to quit
