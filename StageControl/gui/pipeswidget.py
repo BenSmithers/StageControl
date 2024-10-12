@@ -11,6 +11,7 @@ import numpy as np
 import pexpect
 from emailer import send_alert
 import os 
+from time import time 
 
 from StageControl.gui.constants import PRESSURE_THRESH,TEMP_MAX
 SCALE = 5.0
@@ -27,6 +28,8 @@ class PipesWidget(QtWidgets.QWidget):
     pump_signal = pyqtSignal(int, bool)
     sv_signal = pyqtSignal(int, bool)
     bv_signal = pyqtSignal(int, bool)
+    interrupt_signal = pyqtSignal()
+
     def __init__(self, parent:QWidget,  logger, fake=False):
         QtWidgets.QWidget.__init__(self, parent)
 
@@ -85,8 +88,9 @@ class PipesWidget(QtWidgets.QWidget):
 
         self._alert_thrown = False 
 
-        self.update()
+        self._last_update_time = time()
 
+        self.update()
         #self.thread_man = QThreadPool(self)
         #self.setupThread()
 
@@ -315,6 +319,8 @@ class PipesWidget(QtWidgets.QWidget):
 
             The new data is essentially just stored in the gui until its accessed later.
         """
+        self._last_update_time = time()
+
         flows = data["flow"]
         pressures = data["pressure"]
         temperature = data["temperature"]
@@ -345,6 +351,13 @@ class PipesWidget(QtWidgets.QWidget):
         if self._fake:
             pressures, flows, temperature = self._generate_testdata()
         #else:
+
+        ### --------------------------- Check time since last update --------------------------
+
+        time_since_last = time() - self._last_update_time
+        if time_since_last>30:
+            self.interrupt_signal.emit()
+            self._last_update_time = time() # update this so we don't try immediately again
 
         ### -------------------------------- Check for Alarms --------------------------------
 

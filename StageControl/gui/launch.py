@@ -136,6 +136,7 @@ class main_window(QMainWindow):
             self.ui.pipes.pump_signal.connect(self.worker_thread.pump)
             self.ui.pipes.bv_signal.connect(self.worker_thread.bv)
             self.ui.pipes.sv_signal.connect(self.worker_thread.sv)
+            self.ui.pipes.interrupt_signal.connect(self.worker_thread.interrupt)
             self.killConnection.connect(self.worker_thread.finish)
             self.ui.pipes.ui.relaunch_button.clicked.connect(self.worker_thread.relaunch_python)
 

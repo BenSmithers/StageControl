@@ -74,8 +74,14 @@ class PiConnect(QObject):
             self.message_signal.emit("Timeout waiting for response to {}\n".format(what))
         # get response, split by carriage return 
         raw = self._connection.before.decode('UTF-8').split("\r")
-        return raw [2]
+        return raw
     
+    @pyqtSlot
+    def interrupt(self):
+        self.message_signal.emit("Data not responding. Interrupting python and restarting\n")
+        self._connection.sendintr() 
+        self.relaunch_python()
+
     def data(self):
         #raw_response = self.send_receive("data")
         self._connection.sendline("data")
