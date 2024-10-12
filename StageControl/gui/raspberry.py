@@ -10,6 +10,8 @@ from constants import HOST, USER, PASSWORD, PORT, KEY
 
 from PyQt5.QtCore import QRunnable , QObject, pyqtSignal, pyqtSlot, QTimer 
 
+debug = False 
+
 class PiConnect(QObject):
     """
         This is a separate worker thread run separately from other stuff. 
@@ -54,12 +56,18 @@ class PiConnect(QObject):
             port=PORT,
             auto_prompt_reset=False
         )
-        
+        if debug:
+            print("logged in")
         self.message_signal.emit("changing to labview folder\n")
         # update prompt now 
         self._connection.set_unique_prompt()
         self.send_receive("cd wmsLabview")
         self.message_signal.emit("starting wms_main\n")
+        if debug:
+            print("killing old ones")
+        self.send_receive("ps aux | grep -ie wms_main | awk '{print $2}' | xargs kill -9")
+        if debug:
+            print("starting starting")
         self.send_receive("python3 wms_main.py")
         self.message_signal.emit("started!\n")
 
@@ -76,11 +84,10 @@ class PiConnect(QObject):
         raw = self._connection.before.decode('UTF-8').split("\r")
         return raw
     
-    @pyqtSlot
+    @pyqtSlot()
     def interrupt(self):
         self.message_signal.emit("Data not responding. Interrupting python and restarting\n")
-        self._connection.sendintr() 
-        self.relaunch_python()
+        self.initialize()
 
     def data(self):
         #raw_response = self.send_receive("data")
@@ -106,13 +113,14 @@ class PiConnect(QObject):
                 "flow":flow,
                 "pressure":pressure,
                 "temperature":temperature,
-            }        
+            }   
+            if debug:
+                print(ret_dat)
             self.data_signal.emit(ret_dat)
         except Exception as e:
             self.message_signal.emit("Failed to parse response {}\n".format(raw_response)) 
-            
-        
-
+            if debug:
+                print("problem")
     
     @pyqtSlot(int, bool)
     def pump(self, number:int, on:bool):
