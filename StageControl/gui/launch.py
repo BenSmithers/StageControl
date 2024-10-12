@@ -31,6 +31,7 @@ class USBWorker(QObject):
         self._conn = ELLxConnection(self._stage_path, fake=fake)
         self._board = LEDBoard(self._led_path, fake=fake)
         self._board.enable()
+        self._board.set_int_trigger()
         self.StatusSignal.emit("Initialized USB Connections")
 
 
