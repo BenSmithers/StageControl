@@ -328,7 +328,7 @@ class PipesWidget(QtWidgets.QWidget):
         # NOTE: there's a problem where the pi will hang while doing this sometimes. Need to find a way to catch that. 
         # will likely need some kind of threading :(
         ### -------------------------------- UPDATE GUI --------------------------------
-        flow_bar = np.array(flows)*90+5
+        flow_bar = np.array(flows)*100
         self.ui.flow1.setValue(flow_bar[0])
         self.ui.flow2.setValue(flow_bar[1])
         self.ui.flow3.setValue(flow_bar[2])
@@ -357,7 +357,7 @@ class PipesWidget(QtWidgets.QWidget):
         time_since_last = time() - self._last_update_time
         if time_since_last>30:
             self.interrupt_signal.emit()
-            self._last_update_time = time() # update this so we don't try immediately again
+            self._last_update_time = time() + 30 # update this so we don't try immediately again, add a 30s buffer
 
         ### -------------------------------- Check for Alarms --------------------------------
 

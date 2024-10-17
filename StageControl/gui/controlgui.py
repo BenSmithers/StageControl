@@ -36,6 +36,8 @@ class Ui_Widget(object):
         self.positionSpin = QtWidgets.QDoubleSpinBox(Widget)
         self.positionSpin.setObjectName("positionSpin")
         self.positionSpin.setSingleStep(0.05)
+        self.positionSpin.setMinimum(-36)
+        self.positionSpin.setMaximum(36)
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.positionSpin)
         self.goPosBut = QtWidgets.QPushButton(Widget)
         self.goPosBut.setObjectName("goPosBut")
