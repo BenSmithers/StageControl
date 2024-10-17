@@ -134,8 +134,8 @@ class PiConnect(QObject):
 
     @pyqtSlot(int, bool)
     def sv(self, number:int, on:bool):
-        if not(number>=1 and number<=2):
-            raise ValueError("SV must be between 1 and 2")
+        if not(number>=1 and number<=3):
+            raise ValueError("SV must be between 1 and 3")
         self.send_receive("sv{} {}".format(
             number, "on" if on else "off"
         ))

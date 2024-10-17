@@ -52,6 +52,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.bv6_button.stateChanged.connect(self.bv6_change)
         self.ui.sv1_button.stateChanged.connect(self.sv1_change)
         self.ui.sv2_button.stateChanged.connect(self.sv2_change)
+        self.ui.sv3_button.stateChanged.connect(self.sv3_change)
         self.ui.pu1_button.stateChanged.connect(self.pu1_change)
         self.ui.pu2_button.stateChanged.connect(self.pu2_change)
         self.ui.pu3_button.stateChanged.connect(self.pu3_change)
@@ -275,6 +276,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.bv6_button.setEnabled(False)
         self.ui.sv1_button.setEnabled(False)
         self.ui.sv2_button.setEnabled(False)
+        self.ui.sv3_button.setEnabled(False)
         self.ui.pu1_button.setEnabled(False)
         self.ui.pu2_button.setEnabled(False)
         self.ui.pu3_button.setEnabled(False)
@@ -304,6 +306,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.bv6_button.setEnabled(True)
         self.ui.sv1_button.setEnabled(True)
         self.ui.sv2_button.setEnabled(True)
+        self.ui.sv3_button.setEnabled(True)
         self.ui.pu1_button.setEnabled(True)
         self.ui.pu2_button.setEnabled(True)
         self.ui.pu3_button.setEnabled(True)
@@ -557,6 +560,9 @@ class PipesWidget(QtWidgets.QWidget):
     def sv2_change(self):
         if not self._fake:
             self.sv_signal.emit(2, self.ui.sv2_button.isChecked())
+    def sv3_change(self):
+        if not self._fake:
+            self.sv_signal.emit(3, self.ui.sv3_button.isChecked())
 
     def pu1_change(self):
         if not self._fake:

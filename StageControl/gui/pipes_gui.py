@@ -80,6 +80,9 @@ class Ui_Form(object):
         self.sv2_button = QtWidgets.QCheckBox(Form)
         self.sv2_button.setObjectName("sv2_button")
         self.verticalLayout.addWidget(self.sv2_button)
+        self.sv3_button = QtWidgets.QCheckBox(Form)
+        self.sv3_button.setObjectName("sv3_button")
+        self.verticalLayout.addWidget(self.sv3_button)
 
         self.label_3 = QtWidgets.QLabel(Form)
         self.label_3.setObjectName("label_3")
@@ -225,6 +228,7 @@ class Ui_Form(object):
         self.label_2.setText(_translate("Form", "Valves"))
         self.sv1_button.setText(_translate("Form", "SV1 (main)"))
         self.sv2_button.setText(_translate("Form", "SV2 (Pre-Chamber)"))
+        self.sv3_button.setText(_translate("Form", "SV3 (Gas Removal)"))
         self.label_3.setText(_translate("Form", "Pumps"))
         self.pu1_button.setText(_translate("Form", "Pump 1 (input)"))
         self.pu2_button.setText(_translate("Form", "Pump 2 (Chamber)"))
