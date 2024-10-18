@@ -32,10 +32,11 @@ class ControlWidget(QtWidgets.QWidget):
         self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
 
         self._led_locations = [
-            2*i for i in range(7)
+            8.5*i for i in range(7)
         ]
-        self._led_locations.append(1)
-        self._led_locations.append(7)
+        self._led_locations = [x + 4.75 for x  in self._led_locations]
+        self._led_locations.append(9.01)
+        self._led_locations.append(51.50)
 
         self._button_timer =  QtCore.QTimer(self)
         self._button_timer.timeout.connect(self._enable_button)

@@ -72,7 +72,7 @@ class ELLxConnection:
         data = {
             "call":this_call.encode(*args),
             "response":raw_response,
-            "data":int(resp[-1])/self._pulses_per_rev
+            "data":0
         }
         if self._fake:
             return data
