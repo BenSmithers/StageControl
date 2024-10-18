@@ -28,8 +28,8 @@ class Ui_Widget(object):
         self.waveCombo.addItem("278nm LED")
         self.waveCombo.addItem("255nm LED")
         self.waveCombo.addItem("235nm LED")
-        self.waveCombo.addItem("Align 1")
-        self.waveCombo.addItem("Align 2")
+        #self.waveCombo.addItem("Align 1")
+        #self.waveCombo.addItem("Align 2")
 
 
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.waveCombo)
