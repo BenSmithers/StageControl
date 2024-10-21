@@ -25,14 +25,17 @@ class Ui_Form(object):
 
         self.drain_button = QtWidgets.QPushButton(Form)
         self.drain_button.setText("Drain Chamber")
+        self.drain_button.setEnabled(False)
         self.verticalLayout.addWidget(self.drain_button)
 
         self.fill_filter = QtWidgets.QPushButton(Form)
         self.fill_filter.setText("Fill with Filtered")
+        self.fill_filter.setEnabled(False)
         self.verticalLayout.addWidget(self.fill_filter)
 
         self.fill_osmosis = QtWidgets.QPushButton(Form)
         self.fill_osmosis.setText("Fill with Osmosis")
+        self.fill_osmosis.setEnabled(False)
         self.verticalLayout.addWidget(self.fill_osmosis)
         
         self.status_label = QtWidgets.QLabel(Form)
