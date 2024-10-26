@@ -12,6 +12,8 @@ import os
 import time 
 
 # self.parent.scene.get_system(hid)
+from StageControl.ELLxControl import ELLxConnection
+from StageControl.LEDControl import LEDBoard
 
 class USBWorker(QObject):
     ELLxSignal = pyqtSignal(dict)
@@ -26,12 +28,12 @@ class USBWorker(QObject):
 
     @pyqtSlot()
     def initialize(self):
-        from StageControl.ELLxControl import ELLxConnection
-        from StageControl.LEDControl import LEDBoard
         self._conn = ELLxConnection(self._stage_path, fake=fake)
         self._board = LEDBoard(self._led_path, fake=fake)
         self._board.enable()
         self._board.set_int_trigger()
+        self._board.set_fast_rate()
+        self._board.set_adc(900) 
         self.StatusSignal.emit("Initialized USB Connections")
 
 
@@ -42,10 +44,12 @@ class USBWorker(QObject):
         else:
             msg=self._board.set_fast_rate()
         self.StatusSignal.emit(msg)
+    
     @pyqtSlot(int)
     def set_adc(self, new_value):
-        msg=self._board.set_adc(new_value)
+        msg=self._board.set_adc(int(new_value))
         self.StatusSignal.emit(msg)
+
     @pyqtSlot(int)
     def activate_led(self, led_no):
         msg=self._board.activate_led(led_no)
