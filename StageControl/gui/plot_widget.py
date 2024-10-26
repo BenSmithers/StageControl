@@ -17,7 +17,7 @@ class PlotsWidget(QtWidgets.QWidget):
 
         self._logger = logger
 
-        self._filepath = "/Users/bsmithers/software/PicoCode/ratio_data_osmosis.csv"
+        self._filepath = "/home/watermon/software/PicoCode/ratio_data_live.csv"
         
         self.ui.monitorBox.setChecked(True)
         self.ui.receiverBox.setChecked(True)
