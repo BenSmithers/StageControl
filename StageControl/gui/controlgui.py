@@ -46,9 +46,9 @@ class Ui_Widget(object):
         self.goWaveBut.setObjectName("goWaveBut")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.goWaveBut)
 
-        self.adc_lbl = QtWidgets.QLabel(Widget)
+        self.adc_lbl = QtWidgets.QPushButton(Widget)
         self.adc_lbl.setObjectName("adc_lbl")
-        self.adc_lbl.setText("ADC")
+        self.adc_lbl.setText("Set ADC")
         self.adc_spin = QtWidgets.QSpinBox(Widget)
         self.adc_spin.setObjectName("adc_spin")
         self.adc_spin.setMinimum(0)
@@ -59,7 +59,7 @@ class Ui_Widget(object):
 
         self.rate_lbl = QtWidgets.QLabel(Widget)
         self.rate_lbl.setObjectName("rate_lbl")
-        self.rate_lbl.setText("Rate")
+        self.rate_lbl.setText("Flash Rate")
         self.rate_combo = QtWidgets.QComboBox(Widget)
         self.rate_combo.setObjectName("rate_combo")
         self.rate_combo.addItem("1.5kHz")

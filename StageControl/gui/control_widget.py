@@ -24,7 +24,8 @@ class ControlWidget(QtWidgets.QWidget):
 
         self.ui.goWaveBut.clicked.connect(self.go_wavelen)
         self.ui.goPosBut.clicked.connect(self.go_pos)
-        self.ui.adc_spin.valueChanged.connect(self.set_adc)
+#        self.ui.adc_spin.valueChanged.connect(self.set_adc)
+        self.ui.adc_lbl.clicked.connect(self.set_adc)
         self.ui.rate_combo.currentIndexChanged.connect(self.set_freq)
         self.ui.waveCombo.currentIndexChanged.connect(self.wave_combo_change)
         self.ui.test_email.clicked.connect(self.test_email)
