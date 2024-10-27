@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 import numpy as np 
 import os 
 from scipy import stats 
-
+import json
 from plotgui import Ui_Form as gui 
 
 class PlotsWidget(QtWidgets.QWidget):
@@ -56,6 +56,26 @@ class PlotsWidget(QtWidgets.QWidget):
             print(self._filepath)
             return 
         self.axes = self.ui.figure.add_subplot(111)
+
+        charge_dist = self.ui.comboBox.currentIndex()==3
+        if charge_dist:
+            _obj = open("/home/watermon/software/PicoCode/charge_distrib_log.json",'rt')
+            data = json.load(_obj)
+            _obj.close()
+            for entry in data[-5:]:
+                self.axes.stairs(entry["monitor"]/np.sum(entry["monitor"]), entry["bins"], color="red",alpha=0.5)
+                self.axes.stairs(entry["receiver"]/np.sum(entry["receiver"]), entry["bins"], color="purple",alpha=0.5)
+            self.axes.plot([], [], marker="", ls="-", color="blue",label="monitor")
+            self.axes.plot([], [], marker="", ls="-", color="orange",label="receiver")
+            self.axes.set_yscale('log')
+            self.axes.set_xlabel("Amplitude [mV]", size=14)
+            self.axes.set_ylabel("Normalized Counts", size=14)
+            self.axes.legend()
+            self.ui.canvas.draw()
+            
+            return 
+
+
         data = np.loadtxt(self._filepath, delimiter=",").T 
 
         times = (data[0] - np.min(data[0]))/3600
@@ -76,12 +96,14 @@ class PlotsWidget(QtWidgets.QWidget):
         as_no_pulse = self.ui.comboBox.currentIndex() == 1
         as_pulse_pulse = self.ui.comboBox.currentIndex() == 2
 
+
+
         rolling = self.ui.rollingBox.isChecked()
         do_fit = self.ui.showFitBox.isChecked()
 
 
-        receiver_data = data[1][mask]
-        monitor_data = data[3][mask]
+        receiver_data = data[3][mask]
+        monitor_data = data[1][mask]
 
         if as_no_pulse:
             receiver_data= 1-receiver_data
