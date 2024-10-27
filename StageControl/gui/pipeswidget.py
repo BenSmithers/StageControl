@@ -304,15 +304,65 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.bv4_button.setEnabled(True)
         self.ui.bv5_button.setEnabled(True)
         self.ui.bv6_button.setEnabled(True)
+
         self.ui.sv1_button.setEnabled(True)
         self.ui.sv2_button.setEnabled(True)
         self.ui.sv3_button.setEnabled(True)
+
         self.ui.pu1_button.setEnabled(True)
         self.ui.pu2_button.setEnabled(True)
         self.ui.pu3_button.setEnabled(True)
+
         self.ui.drain_button.setEnabled(True)
         self.ui.fill_filter.setEnabled(True)
         self.ui.fill_osmosis.setEnabled(True)
+
+    def refresh(self):
+        """
+            Turns anything that was on before a lost connection then off and on again. 
+        """
+
+        # BV BUTTONS 
+        if self.ui.bv1_button.isChecked():
+            self.bv_signal.emit(1, False)
+            self.bv_signal.emit(1, True) 
+        if self.ui.bv2_button.isChecked():
+            self.bv_signal.emit(2, False)
+            self.bv_signal.emit(2, True) 
+        if self.ui.bv3_button.isChecked():
+            self.bv_signal.emit(3, False)
+            self.bv_signal.emit(3, True) 
+        if self.ui.bv4_button.isChecked():
+            self.bv_signal.emit(4, False)
+            self.bv_signal.emit(4, True) 
+        if self.ui.bv5_button.isChecked():
+            self.bv_signal.emit(5, False)
+            self.bv_signal.emit(5, True) 
+        if self.ui.bv6_button.isChecked():
+            self.bv_signal.emit(6, False)
+            self.bv_signal.emit(6, True) 
+
+        # SV BUTTONS
+        if self.ui.sv1_button.isChecked():
+            self.sv_signal.emit(1, False)
+            self.sv_signal.emit(1, True)
+        if self.ui.sv2_button.isChecked():
+            self.sv_signal.emit(2, False)
+            self.sv_signal.emit(2, True)
+        if self.ui.sv3_button.isChecked():
+            self.sv_signal.emit(3, False)
+            self.sv_signal.emit(3, True)
+
+        # PU BUTTONS 
+        if self.ui.pu1_button.isChecked():
+            self.pump_signal.emit(1, False)
+            self.pump_signal.emit(1, True)
+        if self.ui.pu2_button.isChecked():
+            self.pump_signal.emit(2, False)
+            self.pump_signal.emit(2, True)
+        if self.ui.pu3_button.isChecked():
+            self.pump_signal.emit(3, False)
+            self.pump_signal.emit(3, True)
 
     @pyqtSlot(dict)
     def data_received(self, data):
@@ -361,6 +411,7 @@ class PipesWidget(QtWidgets.QWidget):
         if time_since_last>30:
             self.interrupt_signal.emit()
             self._last_update_time = time() + 30 # update this so we don't try immediately again, add a 30s buffer
+            self.refresh()
 
         ### -------------------------------- Check for Alarms --------------------------------
 

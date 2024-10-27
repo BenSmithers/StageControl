@@ -202,11 +202,30 @@ class Ui_Form(object):
         self.formLayout.setWidget(12, QtWidgets.QFormLayout.FieldRole, self.flow5)
         spacerItem4 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.formLayout.setItem(13, QtWidgets.QFormLayout.FieldRole, spacerItem4)
+
+
+        self.water_lvl1 = QtWidgets.QCheckBox(Form)
+        self.water_lvl1.setObjectName("water_lvl1")
+        self.water_lvl1.setEnabled(False)
+        self.water_lvl1.setText("Water Level 1")
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.water_lvl1)
+
+        self.water_lvl2 = QtWidgets.QCheckBox(Form)
+        self.water_lvl2.setObjectName("water_lvl2")
+        self.water_lvl2.setEnabled(False)
+        self.water_lvl2.setText("Water Level 2")
+        self.formLayout.setWidget(15, QtWidgets.QFormLayout.FieldRole, self.water_lvl2)
+        
+        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout.setItem(16, QtWidgets.QFormLayout.FieldRole, spacerItem5)
+
+
+
         self.horizontalLayout.addLayout(self.formLayout)
 
         self.relaunch_button = QtWidgets.QPushButton(Form)
         self.relaunch_button.setText("Relaunch Interface")
-        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.relaunch_button)
+        self.formLayout.setWidget(17, QtWidgets.QFormLayout.FieldRole, self.relaunch_button)
         
 
         self.flow1.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)

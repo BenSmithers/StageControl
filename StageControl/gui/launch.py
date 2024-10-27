@@ -82,6 +82,8 @@ class main_window(QMainWindow):
     initialize = pyqtSignal()
     initialize_usb = pyqtSignal()
     killConnection = pyqtSignal()
+
+    reinitialize = pyqtSignal()
     def __init__(self,parent=None, fake=False):
         QWidget.__init__(self, parent)
 
@@ -143,7 +145,13 @@ class main_window(QMainWindow):
             self.ui.pipes.sv_signal.connect(self.worker_thread.sv)
             self.ui.pipes.interrupt_signal.connect(self.worker_thread.interrupt)
             self.killConnection.connect(self.worker_thread.finish)
-            self.ui.pipes.ui.relaunch_button.clicked.connect(self.worker_thread.relaunch_python)
+            
+            # first, we connect a signal here to the initializer 
+            self.reinitialize.connect(self.worker_thread.initialize)
+            # and a button to a function here
+            # the button first emits the re-initializer signal
+            #    and then it instructs the pipes manager to send signals to turn on/off the appropriate valves and pumps
+            self.ui.pipes.ui.relaunch_button.clicked.connect(self.functional_reinit)
 
             # used for status updates
             self.worker_thread.message_signal.connect(self.thread_message)
@@ -176,6 +184,10 @@ class main_window(QMainWindow):
         else:
             event.ignore()
             
+    def functional_reinit(self):
+        self.reinitialize.emit()
+        self.ui.pipes.refresh()
+        
     def declick(self):
         print("Double click")
         pathto = QFileDialog.getOpenFileName(None, 'Open File',os.path.join(os.path.dirname(__file__), ".."), 'csv (*.csv)')[0]

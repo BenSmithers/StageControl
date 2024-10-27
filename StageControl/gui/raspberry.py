@@ -28,13 +28,6 @@ class PiConnect(QObject):
         super(QObject, self).__init__()
 
     @pyqtSlot()
-    def relaunch_python(self):
-        self.message_signal.emit("Attempting to relaunch wms_main\n")
-        self.send_receive("cd ~/wmsLabview")        
-        self.send_receive("python3 wms_main.py")
-        self.message_signal.emit("Attempted")
-
-    @pyqtSlot()
     def finish(self):
         """
             Use a signal-slot interface to handle the threads appropriately 
