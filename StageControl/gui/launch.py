@@ -100,7 +100,7 @@ class main_window(QMainWindow):
         self.setup_usb_thread(fake)
 
         self.setWindowTitle("WCTE Water Control System")
-        self.ui.filepathEdit.setText("/Users/bsmithers/software/PicoCode/ratio_data_osmosis.csv")
+        self.ui.filepathEdit.setText("/home/watermon/software/PicoCode/data/{}".format(self.ui.control_widget._write_to))
         self.ui.filepathEdit.doubleClicked.connect(self.declick)
         self.ui.filepathEdit.clicked.connect(self.declick)
         
@@ -190,7 +190,7 @@ class main_window(QMainWindow):
         
     def declick(self):
         print("Double click")
-        pathto = QFileDialog.getOpenFileName(None, 'Open File',os.path.join(os.path.dirname(__file__), ".."), 'csv (*.csv)')[0]
+        pathto = QFileDialog.getOpenFileName(None, 'Open File',"/home/watermon/software/PicoCode/data/", 'dat (*.dat)')[0]
         if pathto is not None:
             if pathto!="":
                 self.ui.filepathEdit.setText(pathto)
