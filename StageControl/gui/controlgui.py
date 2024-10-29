@@ -78,26 +78,51 @@ class Ui_Widget(object):
         self.positionLbl.setObjectName("positionLbl")
         self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.positionLbl)
 
+        self.waterlabel_lbl = QtWidgets.QPushButton(Widget)
+        self.waterlabel_lbl.setText("Update Filename")
+        self.waterlabel_lbl.setObjectName("waterlabel_lbl")
+        self.waterlabel = QtWidgets.QComboBox(Widget)
+        self.waterlabel.setObjectName("waterlabel")
+        
+        self.indexdict = {
+            "Osmosis":0,
+            "WCTE":1,
+            "Filtered":2,
+            "Sterilized":3,
+            "Other":4
+        }
+
+        self.waterlabel.addItem("Osmosis")
+        self.waterlabel.addItem("WCTE")
+        self.waterlabel.addItem("Filtered")
+        self.waterlabel.addItem("Sterilized")
+        self.waterlabel.addItem("Other")
+        
+        #self.waterlabel.setStyleSheet("background-color:rgb(255,255,255)")
+
+        self.formLayout.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.waterlabel_lbl)
+        self.formLayout.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.waterlabel)
+
         self.disable_led = QtWidgets.QPushButton(Widget)
         self.disable_led.setObjectName("disable_led")
-        self.formLayout.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.disable_led)
+        self.formLayout.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.disable_led)
         self.disable_led.setText("Disable LED")
 
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.formLayout.setItem(6,  QtWidgets.QFormLayout.FieldRole, spacerItem)
+        self.formLayout.setItem(7,  QtWidgets.QFormLayout.FieldRole, spacerItem)
 
         self.shift_update = QtWidgets.QPushButton(Widget)
         self.shift_update.setObjectName("shift_update")
         self.shift_update.setText("Update Emails")
-        self.formLayout.setWidget(7, QtWidgets.QFormLayout.FieldRole, self.shift_update)
+        self.formLayout.setWidget(8, QtWidgets.QFormLayout.FieldRole, self.shift_update)
         self.shift_two_lbl =QtWidgets.QLabel(Widget)
         self.shift_two_lbl.setObjectName("shift_two_lbl")
         self.shift_two_lbl.setText("Shifter Email:")
         self.shift_one_lbl =QtWidgets.QLabel(Widget)
         self.shift_one_lbl.setObjectName("shift_one_lbl")
         self.shift_one_lbl.setText("Shifter Email:")
-        self.formLayout.setWidget(8,QtWidgets.QFormLayout.LabelRole, self.shift_one_lbl)
-        self.formLayout.setWidget(9,QtWidgets.QFormLayout.LabelRole, self.shift_two_lbl)
+        self.formLayout.setWidget(9,QtWidgets.QFormLayout.LabelRole, self.shift_one_lbl)
+        self.formLayout.setWidget(10,QtWidgets.QFormLayout.LabelRole, self.shift_two_lbl)
 
         self.shifter_one = QtWidgets.QLineEdit(Widget)
         self.shifter_one.setObjectName("shifter_one")
@@ -108,14 +133,14 @@ class Ui_Widget(object):
         self.shifter_two.setObjectName("shifter_two")
         self.shifter_two.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.shifter_two.setMinimumSize(150,15)
-        self.formLayout.setWidget(8,QtWidgets.QFormLayout.FieldRole, self.shifter_one)
-        self.formLayout.setWidget(9,QtWidgets.QFormLayout.FieldRole, self.shifter_two)
+        self.formLayout.setWidget(9,QtWidgets.QFormLayout.FieldRole, self.shifter_one)
+        self.formLayout.setWidget(10,QtWidgets.QFormLayout.FieldRole, self.shifter_two)
 
 
 
         self.test_email = QtWidgets.QPushButton(Widget)
         self.test_email.setObjectName("test_email")
-        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.test_email)
+        self.formLayout.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.test_email)
 
         self.horizontalLayout.addLayout(self.formLayout)
         self.verticalLayout = QtWidgets.QVBoxLayout()

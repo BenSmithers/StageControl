@@ -28,6 +28,7 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.adc_lbl.clicked.connect(self.set_adc)
         self.ui.rate_combo.currentIndexChanged.connect(self.set_freq)
         self.ui.waveCombo.currentIndexChanged.connect(self.wave_combo_change)
+        self.ui.waterlabel_lbl.clicked.connect(self.write_new_name)
         self.ui.test_email.clicked.connect(self.test_email)
 
         self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
@@ -54,6 +55,32 @@ class ControlWidget(QtWidgets.QWidget):
         self._updater_clock.start(int(tts*1000))
         print("{} hours until next shift".format(tts/3600))
 
+        self._outfilename = os.path.join(os.path.dirname(__file__),"..","..","..","PicoCode","outfilename.txt")
+        if os.path.exists(self._outfilename):
+            _obj = open(self._outfilename,'r')
+            text = _obj.readline()
+            kind = text.split("_")[1]
+            self.ui.waterlabel.setCurrentIndex(self.ui.indexdict[kind])
+            _obj.close()
+        else:
+            self.ui.waterlabel.setCurrentIndex(4) 
+
+    def write_new_name(self):
+        """
+            Writes a new out-file file name
+        """
+        
+        write_text = "picodat_{}_{}_{}adc_{}.dat".format(
+            self.ui.waterlabel.currentText(),
+            self.ui.waveCombo.currentText().split(" ")[0],
+            self.ui.adc_spin.value(),
+            "mHz" if self.ui.rate_combo.currentIndex()==1 else "kHz"
+        )
+
+        _obj = open(self._outfilename,'wt')
+        _obj.write(write_text)
+        _obj.close()
+        self.insert_text("Updated PicoCode savefile name")
 
     def send_alert(self, message, headline):
         if self.ui.shifter_one.text()!="":
