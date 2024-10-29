@@ -377,9 +377,8 @@ class PipesWidget(QtWidgets.QWidget):
         flows = data["flow"]
         pressures = data["pressure"]
         temperature = data["temperature"]
+        waterlvl = data["waterlevel"]
 
-        # NOTE: there's a problem where the pi will hang while doing this sometimes. Need to find a way to catch that. 
-        # will likely need some kind of threading :(
         ### -------------------------------- UPDATE GUI --------------------------------
         flow_bar = np.array(flows)*100
         self.ui.flow1.setValue(flow_bar[0])
@@ -395,6 +394,9 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]))
         self.ui.lcdNumber_3.setText("{:.2f}".format(pressures[2]))
         self.ui.lcdNumber_2.setText("{:.2f}".format(pressures[3])) 
+
+        self.ui.water_lvl1.setChecked(waterlvl[0])
+        self.ui.water_lvl2.setChecked(waterlvl[1])
 
     def update(self):
         """

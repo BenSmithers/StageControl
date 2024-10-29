@@ -101,11 +101,13 @@ class PiConnect(QObject):
             pressure = np.array([row[0] for row in data_list[1:]])
             flow = np.array([row[1] for row in data_list[1:]]).astype(bool)
             temperature = np.array([row[2] for row in data_list[1:]])
+            waterlevel = np.array([row[4] for row in data_list[1:]])
             #raise NotImplementedError("Add data parser!")
             ret_dat = {
                 "flow":flow,
                 "pressure":pressure,
                 "temperature":temperature,
+                "waterlevel":waterlevel>0.5
             }   
             if debug:
                 print(ret_dat)
