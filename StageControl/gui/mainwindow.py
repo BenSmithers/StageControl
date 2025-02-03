@@ -14,6 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from plot_widget import PlotsWidget 
 from control_widget import ControlWidget
 from pipeswidget import PipesWidget
+from camera import Camera
 
 class LineEdit(QtWidgets.QLineEdit):
     doubleClicked = QtCore.pyqtSignal()
@@ -63,7 +64,12 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.plotTab, "")
         self.pipes = PipesWidget(self.centralwidget,self.control_widget, fake)
         self.tabWidget.addTab(self.pipes, "Pump Operations")
+
+        self.camera = Camera(self.centralwidget, self.control_widget)
+        self.tabWidget.addTab(self.camera, "Camera Control")
+
         self.verticalLayout.addWidget(self.tabWidget)
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 37))

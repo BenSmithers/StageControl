@@ -8,6 +8,7 @@ import pexpect
 from mainwindow import Ui_MainWindow as gui
 from StageControl.gui.raspberry import PiConnect
 from warn_widg import WarnWidget
+from camera import CameraWorker
 import os 
 import time 
 
@@ -90,20 +91,41 @@ class main_window(QMainWindow):
         self.ui = gui()
         self.ui.setupUi(self, fake=fake)
 
-        # we create a thread manager and we start it up
+        # setup for Raspberry Pi management 
         self.thread_man = QThread(self)
         self.thread_man.start()
         self.setup_thread()
         
+        # setup for USB management
         self.thread_man_2 = QThread(self)
         self.thread_man_2.start()
         self.setup_usb_thread(fake)
+
+        # setup for camera management 
+        self.camera_threadman = QThread()
+        self.camera_threadman.start()
+        self.init_cameras()
 
         self.setWindowTitle("WCTE Water Control System")
         self.ui.filepathEdit.setText("/home/watermon/software/PicoCode/data/{}".format(self.ui.control_widget._write_to))
         self.ui.filepathEdit.doubleClicked.connect(self.declick)
         self.ui.filepathEdit.clicked.connect(self.declick)
         
+    def init_cameras(self):
+        try:
+            self.camera_worker = CameraWorker()
+            self.camera_threadman.moveToThread(self.camera_threadman)
+            self.camera_worker.pictureTaken.connect(self.ui.camera.update_images)
+            self.ui.camera.iso_signal.connect(self.camera_worker.update_iso)
+            self.ui.camera.shutter_signal.connect(self.camera_worker.update_shutter)
+            self.ui.camera.aperture_signal.connect(self.camera_worker.update_aperture)
+        except Exception as e:
+            self.dialog = WarnWidget(parent=self, message="Critical Error {}".format(e))
+            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            self.dialog.ui.buttonBox.helpRequested.connect(self.ui.control_widget.help)
+            self.dialog.exec_()  
+            sys.exit(1)
+
     def setup_usb_thread(self, fake):
         try:
             self.usb_worker_thread = USBWorker(fake)
@@ -128,7 +150,7 @@ class main_window(QMainWindow):
             self.dialog.ui.buttonBox.helpRequested.connect(self.ui.control_widget.help)
             self.dialog.exec_()  
             sys.exit(1)
-  
+   
 
     def setup_thread(self):
         """
