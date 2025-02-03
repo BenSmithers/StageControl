@@ -36,9 +36,9 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_locations = [
             8.5*i for i in range(7)
         ]
-        self._led_locations = [x + 4.7 for x  in self._led_locations]
-        self._led_locations.append(8.93)
-        self._led_locations.append(51.40)
+        self._led_locations = [x + 4.49 for x  in self._led_locations]
+        self._led_locations.append(8.74)
+        self._led_locations.append(51.24)
 
         self._button_timer =  QtCore.QTimer(self)
         self._button_timer.timeout.connect(self._enable_button)
@@ -52,7 +52,8 @@ class ControlWidget(QtWidgets.QWidget):
         tts = get_time_to_next_shift()
         self._updater_clock = QtCore.QTimer(self)
         self._updater_clock.timeout.connect(self.auto_update)
-        self._updater_clock.start(int(tts*1000))
+        #if tts>0:
+        #self._updater_clock.start(int(tts*1000))
         print("{} hours until next shift".format(tts/3600))
 
         self._outfilename = os.path.join(os.path.dirname(__file__),"..","..","..","PicoCode","outfilename.txt")
@@ -79,7 +80,7 @@ class ControlWidget(QtWidgets.QWidget):
         """
         
         self._write_to = "picodat_{}_{}_{}adc_{}.dat".format(
-            self.ui.waterlabel.currentText(),
+            self.ui.waterlabel.currentText().replace(" ", "_"),
             self.ui.waveCombo.currentText().split(" ")[0],
             self.ui.adc_spin.value(),
             "mHz" if self.ui.rate_combo.currentIndex()==1 else "kHz"
