@@ -95,6 +95,13 @@ class PipesWidget(QtWidgets.QWidget):
         #self.thread_man = QThreadPool(self)
         #self.setupThread()
 
+        DFILE = os.path.join(os.path.dirname(__file__), "data", "data_history.csv")
+        if not os.path.exists(DFILE):
+            self._obj = open(DFILE, 'wt')
+            self._obj.write("# Time, P0, P1, P2, P3, T1, T2, F1, F2, F3, F4, F5\n")
+        else:
+            self._obj = open(DFILE, 'a')
+
 
     def stop_button(self):
         self.ui.status_label.setText("... Awaiting Input")
@@ -397,6 +404,15 @@ class PipesWidget(QtWidgets.QWidget):
 
         self.ui.water_lvl1.setChecked(waterlvl[0])
         self.ui.water_lvl2.setChecked(waterlvl[1])
+
+        # dump data to text file
+        # Time, P0, P1, P2, P3, T1, T2, F1, F2, F3, F4, F5\n
+
+        self._obj.write("{}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}\n".format(
+            time(), pressures[0],pressures[1],pressures[2],pressures[3],temperature[0],temperature[1],
+            flow_bar[0],flow_bar[1],flow_bar[2],flow_bar[3],flow_bar[4]
+        ))
+        self._obj.flush()
 
     def update(self):
         """
