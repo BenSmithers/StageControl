@@ -5,13 +5,7 @@ from PyQt5.QtWidgets import  QWidget
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from PyQt5.QtCore import QObject
 
-from enum import Enum
 import os 
-
-ISOMIN = 24
-ISOMAX = 75
-SHUTTER = 19
-
 
 class Camera(QtWidgets.QWidget):
 
@@ -39,6 +33,11 @@ class Camera(QtWidgets.QWidget):
     def update_iso(self):
         self.iso_signal.emit(self.ui.isocombo.currentIndex()) 
     def take_picture(self):
+        self.movie = QtGui.QMovie("./data/loading-buffering.gif")
+        self.ui.camera1.setMovie(self.movie)
+        self.ui.camera2.setMovie(self.movie)
+        self.movie.start()
+        
         self.shoot_signal.emit()             
     
     @pyqtSlot()
@@ -46,11 +45,17 @@ class Camera(QtWidgets.QWidget):
         self.ui.camera1.setPixmap(QtGui.QPixmap("./photo_camera_0.jpg"))
         self.ui.camera2.setPixmap(QtGui.QPixmap("./photo_camera_1.jpg"))
 
+
 class CameraWorker(QObject):
     pictureTaken = pyqtSignal()
     message_signal = pyqtSignal(str)    
 
+    ISOMIN = 24
+    ISOMAX = 75
+    SHUTTER = 19
+
     def __init__(self):
+        super(QObject, self).__init__()
         self._camera1 = "172.29.134.51"
         self._camera2 = "172.29.134.51"
 
@@ -64,8 +69,8 @@ class CameraWorker(QObject):
     @pyqtSlot(int)
     def update_shutter(self, index:int):
         self.message_signal.emit("Updating Shutter")
-        self.configure(self._camera1, SHUTTER, index) 
-        self.configure(self._camera2, SHUTTER, index)
+        self.configure(self._camera1, self.SHUTTER, index) 
+        self.configure(self._camera2, self.SHUTTER, index)
 
     @pyqtSlot(int)
     def update_iso(self, index:int):

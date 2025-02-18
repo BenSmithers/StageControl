@@ -114,7 +114,7 @@ class main_window(QMainWindow):
     def init_cameras(self):
         try:
             self.camera_worker = CameraWorker()
-            self.camera_threadman.moveToThread(self.camera_threadman)
+            self.camera_worker.moveToThread(self.camera_threadman)
             self.camera_worker.pictureTaken.connect(self.ui.camera.update_images)
             self.camera_worker.message_signal.connect(self.thread_message)
             self.ui.camera.iso_signal.connect(self.camera_worker.update_iso)
