@@ -7,14 +7,24 @@ import os
 import datetime 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+# setting 90 is for turning "auto" on/off for exposure time
+# setting 19
 exposure_times = [
     "Auto",
     2,5,10,15,20,30
 ]
 
-async def main():
+# iso min is setting 24 
+# iso max is setting 75
+isos = [
+    100, 200, 400, 800
+]
 
-    async with WiredGoPro(None) as gopro:
+
+
+async def main(sno):
+
+    async with WiredGoPro(sno) as gopro:
         assert gopro
         assert (await gopro.http_command.load_preset_group(group=proto.EnumPresetGroup.PRESET_GROUP_ID_PHOTO)).ok
 
@@ -37,19 +47,19 @@ async def main():
 def entrypoint(cno=0):
     if cno==0:
         ip_add = "172.29.134.51"
+        sno = "006934"
     else:
-        raise NotImplementedError
-    exposure_setting = 1
-    os.system("curl --request GET --url 'http://{}:8080/gopro/camera/setting?setting=19&option={}'".format(ip_add,exposure_setting))
-    asyncio.run(main())
+        ip_add = "172.29.106.51"
+        sno = "185906"
+    asyncio.run(main(sno))
 
     image = Image.open("photo.jpg")
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default(120)
     draw.text((0, 0),str(datetime.datetime.now()),(255,255,255),font=font)
     image.save("photo_camera_{}.jpg".format(cno))
-
     os.remove("photo.jpg")
 
+
 if __name__=="__main__":
-    entrypoint()
+    entrypoint(0)

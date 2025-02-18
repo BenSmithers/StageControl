@@ -116,9 +116,11 @@ class main_window(QMainWindow):
             self.camera_worker = CameraWorker()
             self.camera_threadman.moveToThread(self.camera_threadman)
             self.camera_worker.pictureTaken.connect(self.ui.camera.update_images)
+            self.camera_worker.message_signal.connect(self.thread_message)
             self.ui.camera.iso_signal.connect(self.camera_worker.update_iso)
             self.ui.camera.shutter_signal.connect(self.camera_worker.update_shutter)
             self.ui.camera.aperture_signal.connect(self.camera_worker.update_aperture)
+            self.ui.camera.shoot_signal.connect(self.camera_worker.take_picture)
         except Exception as e:
             self.dialog = WarnWidget(parent=self, message="Critical Error {}".format(e))
             self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
