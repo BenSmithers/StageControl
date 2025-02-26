@@ -29,6 +29,7 @@ class PipesWidget(QtWidgets.QWidget):
     sv_signal = pyqtSignal(int, bool)
     bv_signal = pyqtSignal(int, bool)
     interrupt_signal = pyqtSignal()
+    update_plot_signal = pyqtSignal()
 
     def __init__(self, parent:QWidget,  logger, fake=False):
         QtWidgets.QWidget.__init__(self, parent)
@@ -575,6 +576,7 @@ class PipesWidget(QtWidgets.QWidget):
                 else:
                     self._overflow_counter = 0
         
+        self.update_plot_signal.emit()
 
     def panic(self, message, heat=False, skip_email=False):
         """

@@ -15,6 +15,7 @@ from plot_widget import PlotsWidget
 from control_widget import ControlWidget
 from pipeswidget import PipesWidget
 from camera import Camera
+from history_widget import HistoryWidget
 
 class LineEdit(QtWidgets.QLineEdit):
     doubleClicked = QtCore.pyqtSignal()
@@ -64,6 +65,8 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.plotTab, "")
         self.pipes = PipesWidget(self.centralwidget,self.control_widget, fake)
         self.tabWidget.addTab(self.pipes, "Pump Operations")
+        self.history = HistoryWidget(self.centralwidget, self.control_widget)
+        self.tabWidget.addTab(self.history, "History")
 
         self.camera = Camera(self.centralwidget, self.control_widget)
         self.tabWidget.addTab(self.camera, "Camera Control")
