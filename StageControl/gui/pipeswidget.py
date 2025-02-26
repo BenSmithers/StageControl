@@ -541,14 +541,14 @@ class PipesWidget(QtWidgets.QWidget):
                 # bv6 will be turned on the _second_ time this is reached 
                 if self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked():
                     self.ui.bv6_button.setChecked(True)
+                    self.ui.sv3_button.setChecked(True)
 
                 self.ui.pu1_button.setChecked(True)
                 self.ui.sv1_button.setChecked(True)
                 self.ui.sv2_button.setChecked(True)
 
                 if self._filling_filter:
-                    self.ui.bv2_button.setChecked(True)
-                    self.ui.bv4_button.setChecked(True) 
+                    self.ui.bv1_button.setChecked(True)
                 elif self._filling_osmo:
                     self.ui.bv5_button.setChecked(True)
 
@@ -556,6 +556,8 @@ class PipesWidget(QtWidgets.QWidget):
                     self._overflow_counter+=1
 
                     if self._overflow_counter>3:
+                        self.ui.sv3_button.setChecked(False)
+                        self.ui.bv1_button.setChecked(False)
                         self.ui.sv1_button.setChecked(False)
                         self.ui.bv2_button.setChecked(False)
                         self.ui.bv4_button.setChecked(False)
