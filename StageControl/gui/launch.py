@@ -65,6 +65,7 @@ class USBWorker(QObject):
 
     @pyqtSlot(float)
     def move_absolute(self, position):
+        self._conn.go_home()
         packet = self._conn.move_absolute(position)
         self.ELLxSignal.emit(packet)
 
