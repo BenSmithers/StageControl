@@ -17,8 +17,8 @@ class PlotsWidget(QtWidgets.QWidget):
 
         self._logger = logger
 
-        self._filepath = "/home/watermon/software/PicoCode/ratio_data_live.csv"
-        
+#        self._filepath = "/home/watermon/software/PicoCode/ratio_data_live.csv"
+        self._filepath = "/home/watermon/software/PicoCode/data/picodat_Other_278nm_773adc_mHz.dat"        
         self.ui.monitorBox.setChecked(True)
         self.ui.receiverBox.setChecked(True)
         self.ui.ratioBox.setChecked(True)
@@ -101,9 +101,9 @@ class PlotsWidget(QtWidgets.QWidget):
         rolling = self.ui.rollingBox.isChecked()
         do_fit = self.ui.showFitBox.isChecked()
 
-
-        receiver_data = data[3][mask]
-        monitor_data = data[1][mask]
+        trigger_data = data[1][mask]
+        receiver_data = data[3][mask]/trigger_data
+        monitor_data = data[2][mask]/trigger_data
 
         if as_no_pulse:
             receiver_data= 1-receiver_data
@@ -177,7 +177,7 @@ class PlotsWidget(QtWidgets.QWidget):
                 self.axes.plot([], [], color='gray', label="Ratio")
             if do_fit:
                 self.axes.plot([], [], color='red', label="Fit")
-            self.axes.legend()
+        self.axes.legend()
         if show_ratio or do_fit:
             twax = self.axes.twinx()
             twax.plot(roll_time, roll_value, color="gray", label="Ratio")
