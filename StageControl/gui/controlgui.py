@@ -93,9 +93,10 @@ class Ui_Widget(object):
         }
 
         self.waterlabel.addItem("Osmosis")
-        self.waterlabel.addItem("WCTE")
-        self.waterlabel.addItem("Filtered")
-        self.waterlabel.addItem("Sterilized")
+        self.waterlabel.addItem("Supply Untreated")
+        self.waterlabel.addItem("Supply Filtered")
+        self.waterlabel.addItem("Return Untreated")
+        self.waterlabel.addItem("Supply Filtered")
         self.waterlabel.addItem("Other")
         
         #self.waterlabel.setStyleSheet("background-color:rgb(255,255,255)")
