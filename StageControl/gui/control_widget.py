@@ -36,9 +36,11 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_locations = [
             8.5*i for i in range(7)
         ]
-        self._led_locations = [x + 4.49 for x  in self._led_locations]
+        self._led_locations = [x -1.0 for x  in self._led_locations]
         self._led_locations.append(8.74)
         self._led_locations.append(51.24)
+        self._led_locations[0] = 0
+        self._led_locations[1] = 7.57
 
         self._button_timer =  QtCore.QTimer(self)
         self._button_timer.timeout.connect(self._enable_button)
@@ -62,7 +64,10 @@ class ControlWidget(QtWidgets.QWidget):
             _obj = open(self._outfilename,'r')
             text = _obj.readline()
             kind = text.split("_")[1]
-            self.ui.waterlabel.setCurrentIndex(self.ui.indexdict[kind])
+            try:
+                self.ui.waterlabel.setCurrentIndex(self.ui.indexdict[kind])
+            except Exception as e:
+                self.ui.waterlabel.setCurrentIndex(self.ui.indexdict[ " ".join([text.split("_")[1], text.split("_")[2]])])
             _obj.close()
         else:
             self.ui.waterlabel.setCurrentIndex(4) 
