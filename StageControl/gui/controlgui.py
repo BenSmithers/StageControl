@@ -28,8 +28,8 @@ class Ui_Widget(object):
         self.waveCombo.addItem("278nm LED")
         self.waveCombo.addItem("255nm LED")
         self.waveCombo.addItem("235nm LED")
-        #self.waveCombo.addItem("Align 1")
-        #self.waveCombo.addItem("Align 2")
+        self.waveCombo.addItem("Align 1")
+        self.waveCombo.addItem("Align 2")
 
 
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.waveCombo)
@@ -86,9 +86,11 @@ class Ui_Widget(object):
         
         self.indexdict = {
             "Osmosis":0,
-            "WCTE":1,
-            "Filtered":2,
-            "Sterilized":3,
+            "Supply Untreated":1,
+            "Supply Filtered":2,
+            "Return Untreated":3,
+            "Return Filtered":4,
+            "Air":5,
             "Other":4
         }
 
@@ -96,7 +98,8 @@ class Ui_Widget(object):
         self.waterlabel.addItem("Supply Untreated")
         self.waterlabel.addItem("Supply Filtered")
         self.waterlabel.addItem("Return Untreated")
-        self.waterlabel.addItem("Supply Filtered")
+        self.waterlabel.addItem("Return Filtered")
+        self.waterlabel.addItem("Air")
         self.waterlabel.addItem("Other")
         
         #self.waterlabel.setStyleSheet("background-color:rgb(255,255,255)")
