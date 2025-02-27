@@ -11,12 +11,15 @@ class Ui_Form(object):
         Form.resize(487, 381)
         self.verticalLayout = QtWidgets.QVBoxLayout(Form)
         self.verticalLayout.setObjectName("verticalLayout")
+        self.cbox = QtWidgets.QCheckBox(Form)
+        self.cbox.setText("Lock Plot")
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, Form)
 
         self.verticalLayout.addWidget(self.canvas)
         self.verticalLayout.addWidget(self.toolbar)
+        self.verticalLayout.addWidget(self.cbox)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)

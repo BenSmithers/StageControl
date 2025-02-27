@@ -19,11 +19,13 @@ class HistoryWidget(QtWidgets.QWidget):
         self.ui.setupUi(self)
 
         self._filepath = "/home/watermon/software/StageControl/StageControl/gui/data/data_history.csv"
-        self._filepath = "/Users/bsmithers/software/StageControl/StageControl/gui/data/data_history.csv"
         self.update_plots()
 
     @pyqtSlot()
     def update_plots(self):
+        if self.ui.cbox.isChecked():
+            return
+
         data = np.loadtxt(self._filepath, delimiter=',').T
 
         times = data[0]
