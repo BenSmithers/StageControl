@@ -1,5 +1,7 @@
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QTimer
 
+from StageControl.picocode.read_pico import main
+
 def measure_faux():
     return 0, 0, 0
 
@@ -20,7 +22,7 @@ class DAQWorker(QObject):
     # wavelength, triggers, monitors, receivers 
     data_recieved = pyqtSignal(int, int, int, int)
     
-    MAX_WAVE = 7
+    MAX_WAVE = 6
     def __init__(self):
         super(QObject, self).__init__()
         self._timer = QTimer()
@@ -59,7 +61,7 @@ class DAQWorker(QObject):
             If we aren't doing "striping" we immediately send the data-log signal and wait 30 seconds before starting again
         """
         if self._running:
-            trig, mon, rec = measure_faux()
+            trig, mon, rec = main()
             if self._is_striping:
                 self.data_recieved.emit(self._last_wave, trig, mon, rec)
                 self._last_wave+=1 
