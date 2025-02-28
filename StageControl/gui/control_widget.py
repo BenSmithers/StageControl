@@ -19,7 +19,7 @@ class ControlWidget(QtWidgets.QWidget):
     
     # called when it's done doing things
     done_signal = pyqtSignal()
-    start_signal = pyqtSignal()
+    start_signal = pyqtSignal(bool)
     stop_signal = pyqtSignal()
 
 
@@ -80,7 +80,7 @@ class ControlWidget(QtWidgets.QWidget):
         else:
             self.ui.waterlabel.setCurrentIndex(4) 
 
-        self._write_to = "picodat_{}_{}_{}adc_{}.dat".format(
+        self._write_to = "./picodat/picodat_{}_{}_{}adc_{}.dat".format(
             self.ui.waterlabel.currentText(),
             self.ui.waveCombo.currentText().split(" ")[0],
             self.ui.adc_spin.value(),
@@ -94,11 +94,43 @@ class ControlWidget(QtWidgets.QWidget):
 
     def run_button(self):
         if self.start_mode:
-            self.start_signal.emit()
+            striping = self.ui.rotate_wave.isChecked()
+            if striping:
+                wave = "various"
+                adc = "various"
+            else:
+                wave = self.ui.waveCombo.currentText().split(" ")[0] 
+                adc =self.ui.adc_spin.value()
+                
+            self._write_to = "picodat_{}_{}_{}adc_{}.dat".format(
+                self.ui.waterlabel.currentText(),
+                wave,
+                adc,
+                "mHz" if self.ui.rate_combo.currentIndex()==1 else "kHz"
+            )
+
+            self.start_signal.emit(striping)
             self.ui.start_data_but.setText("Stop Run")
+            
+            self.ui.adc_spin.setEnabled(False)
+            self.ui.waveCombo.setEnabled(False)
+            self.ui.rotate_wave.setEnabled(False)
+            self.ui.positionSpin.setEnabled(False)
+            self.ui.goPosBut.setEnabled(False)
+            self.ui.goWaveBut.setEnabled(False)
+            self.ui.rate_combo.setEnabled(False)
+
         else:
             self.stop_signal.emit()
             self.ui.start_data_but.setText("Start Run")
+            self.ui.run_numb_line.setValue(self.ui.run_numb_line.value() + 1)
+            self.ui.adc_spin.setEnabled(True)
+            self.ui.waveCombo.setEnabled(True)
+            self.ui.rotate_wave.setEnabled(True)
+            self.ui.positionSpin.setEnabled(True)
+            self.ui.goPosBut.setEnabled(True)
+            self.ui.goWaveBut.setEnabled(True)
+            self.ui.rate_combo.setEnabled(True)
 
         self.start_mode = not self.start_mode
             
@@ -194,7 +226,11 @@ class ControlWidget(QtWidgets.QWidget):
 
     @pyqtSlot(int, int, int, int)
     def write_data(self, wavelen, trig, rec, mon):
-        pass
+        _obj = open(self._write_to, 'at')
+        
+        if self.ui.rotate_wave.isChecked():            
+            _obj.write("{}, {}, {}, {}, {}\n".format(trig, rec, mon, self.ui.adc_spin.value(), wavelen, ))
+        _obj.close()
     
     @pyqtSlot()
     def led_ready(self):
