@@ -17,6 +17,12 @@ class ControlWidget(QtWidgets.QWidget):
     freq_signal = pyqtSignal(bool)
     move_signal = pyqtSignal(float)
     
+    # called when it's done doing things
+    done_signal = pyqtSignal()
+    start_signal = pyqtSignal()
+    stop_signal = pyqtSignal()
+
+
     def __init__(self, parent:QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = gui()
@@ -30,6 +36,8 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.waveCombo.currentIndexChanged.connect(self.wave_combo_change)
         self.ui.waterlabel_lbl.clicked.connect(self.write_new_name)
         self.ui.test_email.clicked.connect(self.test_email)
+        self.ui.start_data_but.clicked.connect(self.run_button)
+        self.start_mode = True 
 
         self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
 
@@ -79,6 +87,21 @@ class ControlWidget(QtWidgets.QWidget):
             "mHz" if self.ui.rate_combo.currentIndex()==1 else "kHz"
         )
 
+        self._led_done = False 
+        self._adc_done = False
+        self._stage_done = False 
+
+
+    def run_button(self):
+        if self.start_mode:
+            self.start_signal.emit()
+            self.ui.start_data_but.setText("Stop Run")
+        else:
+            self.stop_signal.emit()
+            self.ui.start_data_but.setText("Start Run")
+
+        self.start_mode = not self.start_mode
+            
     def write_new_name(self):
         """
             Writes a new out-file file name
@@ -95,6 +118,8 @@ class ControlWidget(QtWidgets.QWidget):
         _obj.write(self._write_to)
         _obj.close()
         self.insert_text("Updated PicoCode savefile: {}".format(self._write_to))
+
+
 
     def send_alert(self, message, headline):
         if self.ui.shifter_one.text()!="":
@@ -155,7 +180,7 @@ class ControlWidget(QtWidgets.QWidget):
         index_no = self.ui.waveCombo.currentIndex()
         position = self._led_locations[index_no]
 
-        self.led_signal.emit(index_no+1)        
+        self.led_signal.emit(index_no+1)
         self.set_position(position) 
         
 
@@ -167,6 +192,39 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.positionSpin.setValue(position)
         self.move_signal.emit(position)
 
+    @pyqtSlot(int, int, int, int)
+    def write_data(self, wavelen, trig, rec, mon):
+        pass
+    
+    @pyqtSlot()
+    def led_ready(self):
+        self._led_done = True 
+        self.checker()
+    @pyqtSlot()
+    def adc_ready(self):
+        self._adc_done = True 
+        self.checker()
+    def checker(self):
+        if self._led_done and self._adc_done and self._stage_done:
+            self.insert_text("Ready - taking data")
+            self.done_signal.emit()
+
+    @pyqtSlot(int)
+    def change_wavelength(self, index_no):
+        self._led_done = False 
+        self._stage_done = False
+        self._adc_done = False 
+
+        self.ui.waveCombo.setCurrentIndex(index_no)
+        # LOOK UP ADC VALUE 
+        new_adc = 1 
+        self.ui.adc_spin.setValue(new_adc)
+        self.set_adc()
+        # we need to emit the signals to tell the USB worker thread to move stuff
+        self.go_wavelen()
+        
+        # emit some signals
+
     @pyqtSlot(dict)
     def process_response(self, packet):
         self.insert_text(packet["call"].decode())
@@ -176,6 +234,8 @@ class ControlWidget(QtWidgets.QWidget):
         data = packet["data"]
         if "PO" in packet["response"].decode():
             self.ui.positionLbl.setText("{:.4f} mm".format(data))
+            self._stage_done = True 
+            self.checker()
         elif "GS" in packet["response"].decode():
             self.insert_text("GS Status response: {}\n".format(data)) 
 

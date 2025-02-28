@@ -15,10 +15,13 @@ import time
 # self.parent.scene.get_system(hid)
 from StageControl.ELLxControl import ELLxConnection
 from StageControl.LEDControl import LEDBoard
+from daq import DAQWorker
 
 class USBWorker(QObject):
     ELLxSignal = pyqtSignal(dict)
     StatusSignal = pyqtSignal(str)
+    led_changed_signal = pyqtSignal()
+    adc_changed_signal = pyqtSignal()
     def __init__(self, fake):
         super(QObject, self).__init__()
         from constants import STAGE_USB, LED_BOARD_USB
@@ -50,11 +53,13 @@ class USBWorker(QObject):
     def set_adc(self, new_value):
         msg=self._board.set_adc(int(new_value))
         self.StatusSignal.emit(msg)
+        self.adc_changed_signal.emit()
 
     @pyqtSlot(int)
     def activate_led(self, led_no):
         msg=self._board.activate_led(led_no)
         self.StatusSignal.emit(msg)
+        self.led_changed_signal.emit()
 
     @pyqtSlot()
     def disable_board(self):
@@ -107,11 +112,32 @@ class main_window(QMainWindow):
         self.camera_threadman.start()
         self.init_cameras()
 
+        self.daq_threadman = QThread()
+        self.daq_threadman.start()
+        self.init_daq(self)
+
         self.setWindowTitle("WCTE Water Control System")
         self.ui.filepathEdit.setText("/home/watermon/software/PicoCode/data/{}".format(self.ui.control_widget._write_to))
         self.ui.filepathEdit.doubleClicked.connect(self.declick)
         self.ui.filepathEdit.clicked.connect(self.declick)
         
+    def init_daq(self):
+        try:
+            self.daq_worker = DAQWorker()
+            self.daq_worker.moveToThread(self.daq_threadman)
+            self.daq_worker.data_recieved.connect(self.ui.control_widget.write_data)
+            self.ui.control_widget.done_signal.connect(self.daq_worker.measure)
+            self.ui.control_widget.start_signal.connect(self.daq_worker.start_data_taking)
+            self.ui.control_widget.stop_signal.connect(self.daq_worker.stop_data_taking)
+            self.daq_worker.change_wavelength.connect(self.ui.control_widget.change_wavelength)
+            
+        except Exception as e:
+            self.dialog = WarnWidget(parent=self, message="Critical Error {}".format(e))
+            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            self.dialog.ui.buttonBox.helpRequested.connect(self.ui.control_widget.help)
+            self.dialog.exec_()  
+            sys.exit(1)
+
     def init_cameras(self):
         try:
             self.camera_worker = CameraWorker()
@@ -144,6 +170,10 @@ class main_window(QMainWindow):
             self.ui.control_widget.adc_signal.connect(self.usb_worker_thread.set_adc)
             self.ui.control_widget.freq_signal.connect(self.usb_worker_thread.set_freq)
             self.ui.control_widget.move_signal.connect(self.usb_worker_thread.move_absolute)
+            
+            self.usb_worker_thread.adc_changed_signal.connect(self.ui.control_widget.adc_ready)
+            self.usb_worker_thread.led_changed_signal.connect(self.ui.control_widget.led_ready)
+
             self.ui.control_widget.ui.disable_led.clicked.connect(self.usb_worker_thread.disable_board)
             self.initialize_usb.connect(self.usb_worker_thread.initialize)
             self.initialize_usb.emit()

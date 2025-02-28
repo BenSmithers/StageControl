@@ -112,21 +112,61 @@ class Ui_Widget(object):
         self.formLayout.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.disable_led)
         self.disable_led.setText("Disable LED")
 
+        """
+            - add horizontal line
+            - add checkbox to "rotate wavelengths"
+            - add Button for "START Run" that swaps to "STOP Run" when a run is going 
+            - When a run is going it tells a thread to start taking data
+                the thread takes data, then sets a timer for 20 seconds, then takes data again
+                the thread sends a signal with the data whenever it takes it. The main thread appends that to a data file
+                the thread can send a signal whenever a LED/ADC change is requested. The main thread keeps track; 
+                    once both are done it sends a signal back to the data taker to take data again
+        """
+        
+        self.hline = QtWidgets.QFrame(Widget)
+        self.hline.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        self.hline.setFrameStyle(QtWidgets.QFrame.Shape.HLine)
+        self.hline.setObjectName("Line")
+        self.formLayout.setWidget(7, QtWidgets.QFormLayout.SpanningRole, self.hline)
+
+        self.rotate_wave = QtWidgets.QCheckBox(Widget)
+        self.rotate_wave.setObjectName("rotate_wave")
+        self.rotate_wave.setText("Rotate Wavelengths?")
+        self.formLayout.setWidget(8, QtWidgets.QFormLayout.FieldRole, self.rotate_wave)
+
+        self.run_numb_lbl = QtWidgets.QLabel(Widget)
+        self.run_numb_lbl.setObjectName("run_numb_lbl")
+        self.run_numb_lbl.setText("Run Number:")
+        self.run_numb_line = QtWidgets.QSpinBox(Widget)
+        self.run_numb_line.setObjectName("run_numb_line")
+        self.run_numb_line.setMaximum(1000000)
+        self.run_numb_line.setMinimum(0)
+        self.run_numb_line.setValue(0) # this must be updated based on the number of files in the data folder
+        self.formLayout.setWidget(9, QtWidgets.QFormLayout.LabelRole, self.run_numb_lbl)
+        self.formLayout.setWidget(9, QtWidgets.QFormLayout.FieldRole, self.run_numb_line)
+
+        self.start_data_but = QtWidgets.QPushButton(Widget)
+        self.start_data_but.setObjectName("start_data_but")
+        self.start_data_but.setText("Start Run")
+        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.start_data_but)
+
+        bottom_start_index = 11
+
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.formLayout.setItem(7,  QtWidgets.QFormLayout.FieldRole, spacerItem)
+        self.formLayout.setItem(bottom_start_index,  QtWidgets.QFormLayout.FieldRole, spacerItem)
 
         self.shift_update = QtWidgets.QPushButton(Widget)
         self.shift_update.setObjectName("shift_update")
         self.shift_update.setText("Update Emails")
-        self.formLayout.setWidget(8, QtWidgets.QFormLayout.FieldRole, self.shift_update)
+        self.formLayout.setWidget(bottom_start_index+1, QtWidgets.QFormLayout.FieldRole, self.shift_update)
         self.shift_two_lbl =QtWidgets.QLabel(Widget)
         self.shift_two_lbl.setObjectName("shift_two_lbl")
         self.shift_two_lbl.setText("Shifter Email:")
         self.shift_one_lbl =QtWidgets.QLabel(Widget)
         self.shift_one_lbl.setObjectName("shift_one_lbl")
         self.shift_one_lbl.setText("Shifter Email:")
-        self.formLayout.setWidget(9,QtWidgets.QFormLayout.LabelRole, self.shift_one_lbl)
-        self.formLayout.setWidget(10,QtWidgets.QFormLayout.LabelRole, self.shift_two_lbl)
+        self.formLayout.setWidget(bottom_start_index+2,QtWidgets.QFormLayout.LabelRole, self.shift_one_lbl)
+        self.formLayout.setWidget(bottom_start_index+3,QtWidgets.QFormLayout.LabelRole, self.shift_two_lbl)
 
         self.shifter_one = QtWidgets.QLineEdit(Widget)
         self.shifter_one.setObjectName("shifter_one")
@@ -137,14 +177,14 @@ class Ui_Widget(object):
         self.shifter_two.setObjectName("shifter_two")
         self.shifter_two.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.shifter_two.setMinimumSize(150,15)
-        self.formLayout.setWidget(9,QtWidgets.QFormLayout.FieldRole, self.shifter_one)
-        self.formLayout.setWidget(10,QtWidgets.QFormLayout.FieldRole, self.shifter_two)
+        self.formLayout.setWidget(bottom_start_index+2,QtWidgets.QFormLayout.FieldRole, self.shifter_one)
+        self.formLayout.setWidget(bottom_start_index+3,QtWidgets.QFormLayout.FieldRole, self.shifter_two)
 
 
 
         self.test_email = QtWidgets.QPushButton(Widget)
         self.test_email.setObjectName("test_email")
-        self.formLayout.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.test_email)
+        self.formLayout.setWidget(bottom_start_index+4, QtWidgets.QFormLayout.FieldRole, self.test_email)
 
         self.horizontalLayout.addLayout(self.formLayout)
         self.verticalLayout = QtWidgets.QVBoxLayout()
