@@ -114,7 +114,7 @@ class main_window(QMainWindow):
 
         self.daq_threadman = QThread()
         self.daq_threadman.start()
-        self.init_daq(self)
+        self.init_daq()
 
         self.setWindowTitle("WCTE Water Control System")
         self.ui.filepathEdit.setText("/home/watermon/software/PicoCode/data/{}".format(self.ui.control_widget._write_to))
