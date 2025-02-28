@@ -3,13 +3,13 @@ from PyQt5.QtWidgets import  QWidget
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 import sys 
 import os 
-
+from time import time 
 from controlgui import Ui_Widget as gui 
 
 from datetime import datetime 
 from emailer import get_current_addresses, send_alert_to, get_time_to_next_shift
 from warn_widg import WarnWidget, HelpWidget
-
+from glob import glob
 
 class ControlWidget(QtWidgets.QWidget):
     led_signal = pyqtSignal(int)
@@ -27,7 +27,7 @@ class ControlWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = gui()
         self.ui.setupUi(self)
-
+        self.ui.run_numb_line.setValue(len(glob("./picodat/*")))
         self.ui.goWaveBut.clicked.connect(self.go_wavelen)
         self.ui.goPosBut.clicked.connect(self.go_pos)
 #        self.ui.adc_spin.valueChanged.connect(self.set_adc)
@@ -47,12 +47,21 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_locations = [x -1.0 for x  in self._led_locations]
         self._led_locations.append(8.74)
         self._led_locations.append(51.24)
-        self._led_locations[0] = 0
+        self._led_locations[0] = 0.02
         self._led_locations[1] = 7.57
+        self._adcs= [
+                720,
+                840,
+                768,
+                640,
+                793,
+                817
+                ]
 
         self._button_timer =  QtCore.QTimer(self)
         self._button_timer.timeout.connect(self._enable_button)
 
+        self._running = False
 
         self.insert_text("Initialized GUI\n")
 
@@ -80,12 +89,12 @@ class ControlWidget(QtWidgets.QWidget):
         else:
             self.ui.waterlabel.setCurrentIndex(4) 
 
-        self._write_to = "./picodat/picodat_{}_{}_{}adc_{}.dat".format(
+        self._write_to = os.path.join("picodat", "picodat_{}_{}_{}adc_{}.dat".format(
             self.ui.waterlabel.currentText(),
             self.ui.waveCombo.currentText().split(" ")[0],
             self.ui.adc_spin.value(),
             "mHz" if self.ui.rate_combo.currentIndex()==1 else "kHz"
-        )
+        ))
 
         self._led_done = False 
         self._adc_done = False
@@ -102,12 +111,13 @@ class ControlWidget(QtWidgets.QWidget):
                 wave = self.ui.waveCombo.currentText().split(" ")[0] 
                 adc =self.ui.adc_spin.value()
                 
-            self._write_to = "picodat_{}_{}_{}adc_{}.dat".format(
+            self._write_to = os.path.join("picodat", "picodat_run{}_{}_{}_{}adc_{}.dat".format(
+                self.ui.run_numb_line.value(),
                 self.ui.waterlabel.currentText(),
                 wave,
                 adc,
                 "mHz" if self.ui.rate_combo.currentIndex()==1 else "kHz"
-            )
+            ))
 
             self.start_signal.emit(striping)
             self.ui.start_data_but.setText("Stop Run")
@@ -119,7 +129,7 @@ class ControlWidget(QtWidgets.QWidget):
             self.ui.goPosBut.setEnabled(False)
             self.ui.goWaveBut.setEnabled(False)
             self.ui.rate_combo.setEnabled(False)
-
+            self._running = True 
         else:
             self.stop_signal.emit()
             self.ui.start_data_but.setText("Start Run")
@@ -131,7 +141,7 @@ class ControlWidget(QtWidgets.QWidget):
             self.ui.goPosBut.setEnabled(True)
             self.ui.goWaveBut.setEnabled(True)
             self.ui.rate_combo.setEnabled(True)
-
+            self._running = False 
         self.start_mode = not self.start_mode
             
     def write_new_name(self):
@@ -229,7 +239,7 @@ class ControlWidget(QtWidgets.QWidget):
         _obj = open(self._write_to, 'at')
         
         if self.ui.rotate_wave.isChecked():            
-            _obj.write("{}, {}, {}, {}, {}\n".format(trig, rec, mon, self.ui.adc_spin.value(), wavelen, ))
+            _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, rec, mon, self.ui.adc_spin.value(), wavelen, ))
         _obj.close()
     
     @pyqtSlot()
@@ -242,8 +252,9 @@ class ControlWidget(QtWidgets.QWidget):
         self.checker()
     def checker(self):
         if self._led_done and self._adc_done and self._stage_done:
-            self.insert_text("Ready - taking data")
-            self.done_signal.emit()
+            if self._running:
+                self.insert_text("Ready - taking data")
+                self.done_signal.emit()
 
     @pyqtSlot(int)
     def change_wavelength(self, index_no):
@@ -253,7 +264,8 @@ class ControlWidget(QtWidgets.QWidget):
 
         self.ui.waveCombo.setCurrentIndex(index_no)
         # LOOK UP ADC VALUE 
-        new_adc = 1 
+#        new_adc = 1
+        new_adc = self._adcs[index_no]
         self.ui.adc_spin.setValue(new_adc)
         self.set_adc()
         # we need to emit the signals to tell the USB worker thread to move stuff
