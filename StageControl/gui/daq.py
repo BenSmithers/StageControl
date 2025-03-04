@@ -2,9 +2,6 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QTimer
 
 from StageControl.picocode.read_pico import main
 
-def measure_faux():
-    return 0, 0, 0
-
 class DAQWorker(QObject):
 
     """
@@ -49,14 +46,15 @@ class DAQWorker(QObject):
 
     @pyqtSlot()
     def refill_complete(self):
-        if self._refill_time>45 and self._refill_time<240:
-            self._refillTimer.start(self._refill_time*60*1000) 
+        if self._refill_time>45 and self._refill_time<240 and self._running:
+                self._refillTimer.start(self._refill_time*60*1000) 
         self.message_signal.emit("Refill Complete")
 
 
     def refill_time(self):
-        self.refill_signal.emit(self._refill_kind - 1)  
-        self.message_signal.emit("Starting Refill")
+        if self._running:
+            self.refill_signal.emit(self._refill_kind - 1)  
+            self.message_signal.emit("Starting Refill")
 
     @pyqtSlot(bool, int, int)
     def start_data_taking(self, is_striping:bool, auto_refill:int, refill_time = -1):
@@ -88,6 +86,7 @@ class DAQWorker(QObject):
         self._last_wave = 1
         self._is_striping = False
         self._running = False
+        self._refillTimer.stop()
         self.message_signal.emit("Stopping run")
 
     @pyqtSlot()
