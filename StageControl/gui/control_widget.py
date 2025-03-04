@@ -253,11 +253,13 @@ class ControlWidget(QtWidgets.QWidget):
         self.move_signal.emit(position)
 
     @pyqtSlot(int, int, int, int)
-    def write_data(self, wavelen, trig, rec, mon):
+    def write_data(self, wavelen, trig, mon, rec):
         _obj = open(self._write_to, 'at')
         
         if self.ui.rotate_wave.isChecked():            
             _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, mon, rec, self.ui.adc_spin.value(), wavelen, ))
+        else:
+            _obj.write("{}, {}, {}, {}".format(time(), trig, mon, rec))
         _obj.close()
     
     @pyqtSlot()

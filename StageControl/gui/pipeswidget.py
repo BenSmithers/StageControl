@@ -44,7 +44,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.graphicsView.setScene(self.scene)
         self.ui.graphicsView.setMouseTracking(True)
 
-        self.scene.addPixmap(QtGui.QPixmap(os.path.join(os.path.dirname(__file__), "data","diagram.jpg")) ).setScale(0.25)
+        self.scene.addPixmap(QtGui.QPixmap(os.path.join(os.path.dirname(__file__), "data","diagram.jpg")) ).setScale(0.50)
     
         self.ui.bv1_button.stateChanged.connect(self.bv1_change)
         self.ui.bv2_button.stateChanged.connect(self.bv2_change)
@@ -449,12 +449,12 @@ class PipesWidget(QtWidgets.QWidget):
 
         # dump data to text file
         # Time, P0, P1, P2, P3, T1, T2, F1, F2, F3, F4, F5\n
-
-        self._obj.write("{}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}\n".format(
-            time(), pressures[0],pressures[1],pressures[2],pressures[3],temperature[0],temperature[1],
-            flow_bar[0],flow_bar[1],flow_bar[2],flow_bar[3],flow_bar[4]
-        ))
-        self._obj.flush()
+        if not self._fake:
+            self._obj.write("{}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}\n".format(
+                time(), pressures[0],pressures[1],pressures[2],pressures[3],temperature[0],temperature[1],
+                flow_bar[0],flow_bar[1],flow_bar[2],flow_bar[3],flow_bar[4]
+            ))
+            self._obj.flush()
 
     def update(self):
         """
@@ -699,8 +699,8 @@ class PipesWidget(QtWidgets.QWidget):
                             self.refill_complete.emit()
                 else:
                     self._overflow_counter = 0
-        
-        self.update_plot_signal.emit()
+        if not self._fake: 
+            self.update_plot_signal.emit()
 
     def panic(self, message, heat=False, skip_email=False):
         """
@@ -716,13 +716,14 @@ class PipesWidget(QtWidgets.QWidget):
 
         if heat:
             self.ui.bv6_button.setChecked(False)
-            self.ui.pu1_button.setChecked(True)
+       #     self.ui.pu1_button.setChecked(True)
             self.ui.bv3_button.setChecked(True)
-
+        
+        self.ui.pu1_button.setChecked(heat)
         self.ui.sv1_button.setChecked(heat)
         self.ui.sv2_button.setChecked(heat) 
         self._logger.insert_text(message + "\n")
-        if not skip_email:
+        if False : # not skip_email:
             self._logger.send_alert( message, "Warning!")
         self.dialog = WarnWidget(parent=self,message=message)
         self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
