@@ -250,8 +250,7 @@ class main_window(QMainWindow):
         self.ui.pipes.refresh()
         
     def declick(self):
-        print("Double click")
-        pathto = QFileDialog.getOpenFileName(None, 'Open File',"/home/watermon/software/PicoCode/data/", 'dat (*.dat)')[0]
+        pathto = QFileDialog.getOpenFileName(None, 'Open File',"/home/watermon/software/StageControl/StageControl/gui/picodat/", 'dat (*.dat)')[0]
         if pathto is not None:
             if pathto!="":
                 self.ui.filepathEdit.setText(pathto)
