@@ -30,6 +30,7 @@ class PipesWidget(QtWidgets.QWidget):
     bv_signal = pyqtSignal(int, bool)
     interrupt_signal = pyqtSignal()
     update_plot_signal = pyqtSignal()
+    refill_complete = pyqtSignal()
 
     def __init__(self, parent:QWidget,  logger, fake=False):
         QtWidgets.QWidget.__init__(self, parent)
@@ -58,6 +59,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.pu2_button.stateChanged.connect(self.pu2_change)
         self.ui.pu3_button.stateChanged.connect(self.pu3_change)
         self.ui.drain_button.clicked.connect(self.drain_button_clicked)
+        self.ui.fill_return.clicked.connect(self.fill_tank_clicked)
         self.ui.fill_filter.clicked.connect(self.fill_filtered_clicked)
         self.ui.fill_osmosis.clicked.connect(self.fill_osmosis_clicked)
         self.ui.stop_button.clicked.connect(self.stop_button)
@@ -75,6 +77,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._draining = False 
         self._filling_filter = False 
         self._filling_osmo = False
+        self._filling_tank = False 
         self._draining_open_tank = False
         self._overflow_counter = 0
         self._chamber_drain_counter = 0
@@ -131,6 +134,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._automated = False
         self._draining = False 
         self._filling_filter = False 
+        self._filling_tank = False 
         self._filling_osmo = False
         self._overflow_counter = 0
         self._chamber_drain_counter = 0
@@ -142,16 +146,27 @@ class PipesWidget(QtWidgets.QWidget):
         self._automated = True 
         self._draining = True 
         self._filling_filter = False 
+        self._filling_tank = False 
         self._filling_osmo = False 
         self.ui.status_label.setText("... DRAINING")
         self.disable_all() # while automatically doing things, we don't want the user tweaking the configuration of the gui
         self.ui.stop_button.setEnabled(True)
+
+    @pyqtSlot(int)
+    def refill_handler(self, which):
+        if which==0:
+            self.fill_tank_clicked()
+        elif which==1:
+            self.fill_filtered_clicked()
+        else:
+            raise NotImplementedError("Auto-Filling Osmosis is not supported!")
 
     def fill_osmosis_clicked(self):
         self._automated = True 
         self._draining = True 
         self._filling_osmo = True  
         self._filling_filter = False 
+        self._filling_tank = False 
         self._osmo_state_variable = 0
         self.disable_all()
         self.ui.status_label.setText("... Draining")
@@ -160,10 +175,21 @@ class PipesWidget(QtWidgets.QWidget):
         self._automated = True 
         self._draining = True 
         self._filling_filter = True 
+        self._filling_tank = False 
         self._filling_osmo = False 
         self.disable_all()
         self.ui.status_label.setText("... DRAINING")
         self.ui.stop_button.setEnabled(True)
+
+    def fill_tank_clicked(self):
+        self._automated = True 
+        self._draining = True 
+        self._filling_filter = False 
+        self._filling_tank = True 
+        self._filling_osmo = False 
+        self.disable_all()
+        self.ui.status_label.setText("... DRAINING")
+        self.ui.stop_button.setEnabled(True) 
 
     def flash(self):
         if any(self._alarm):
@@ -303,6 +329,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.pu3_button.setEnabled(False)
         self.ui.drain_button.setEnabled(False)
         self.ui.fill_filter.setEnabled(False)
+        self.ui.fill_return.setEnabled(False)
         self.ui.fill_osmosis.setEnabled(False)
 
         # turn everything off! 
@@ -336,6 +363,7 @@ class PipesWidget(QtWidgets.QWidget):
 
         self.ui.drain_button.setEnabled(True)
         self.ui.fill_filter.setEnabled(True)
+        self.ui.fill_return.setEnabled(True)
         self.ui.fill_osmosis.setEnabled(True)
 
     def refresh(self):
@@ -531,7 +559,7 @@ class PipesWidget(QtWidgets.QWidget):
                     if self._chamber_drain_counter>4:
                         self._draining = False 
                         # we only need to cleanup if there isn't a second step!
-                        if not (self._filling_filter or self._filling_osmo):
+                        if not (self._filling_filter or self._filling_osmo or self._filling_tank):
                             self._automated = False 
                             self.enable_all()
                             self.ui.stop_button.setEnabled(False)
@@ -548,13 +576,13 @@ class PipesWidget(QtWidgets.QWidget):
                     self.ui.pu2_button.setChecked(True)
                     
 
-            elif self._filling_filter or self._filling_osmo:
+            elif self._filling_filter or self._filling_osmo or self._filling_tank:
                 
 
                 filling = flows[1]
                 overflow = flows[2]
 
-                if self._filling_filter:
+                if self._filling_filter or self._filling_tank:
 
                     self.ui.status_label.setText("... FILLING")
                     # first time around, these will both be turned off, so we don't turn bv6 on yet! 
@@ -567,10 +595,11 @@ class PipesWidget(QtWidgets.QWidget):
                     self.ui.sv1_button.setChecked(True)
                     self.ui.sv2_button.setChecked(True)
 
-                if self._filling_filter:
-                    pass # now making it use supply water and not tank water
-                    #self.ui.bv1_button.setChecked(True)
-                else:
+                if self._filling_tank:
+                    self.ui.bv1_button.setChecked(True)
+                elif self._filling_filter:
+                    pass 
+                else: #RO 
 
 
                     self.ui.bv5_button.setChecked(True)
@@ -630,10 +659,12 @@ class PipesWidget(QtWidgets.QWidget):
                         self._filling_osmo=False
                         self._automated=False                      
                         self._filling_filter= False
+                        self._filling_tank = False 
                         self._overflow_counter = 0
                         self.enable_all()
                         self.ui.stop_button.setEnabled(False)
                         self.ui.status_label.setText("... Done!")
+                        self.refill_complete.emit()
 
                 if overflow:
                     self._overflow_counter+=1
@@ -658,12 +689,14 @@ class PipesWidget(QtWidgets.QWidget):
                             self.ui.sv1_button.setChecked(False)
     
                             self._filling_filter = False 
+                            self._filling_tank = False
                             self._filling_osmo = False 
                             self._automated = False
                             self._overflow_counter = 0
                             self.enable_all()
                             self.ui.stop_button.setEnabled(False)
                             self.ui.status_label.setText("... Done!")
+                            self.refill_complete.emit()
                 else:
                     self._overflow_counter = 0
         
@@ -678,6 +711,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.stop_button.setEnabled(False)
         self._automated = False 
         self._filling_filter = False 
+        self._filling_tank = False
         self._filling_osmo = False 
 
         if heat:

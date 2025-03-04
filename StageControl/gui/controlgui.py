@@ -134,6 +134,33 @@ class Ui_Widget(object):
         self.rotate_wave.setText("Rotate Wavelengths?")
         self.formLayout.setWidget(8, QtWidgets.QFormLayout.FieldRole, self.rotate_wave)
 
+        self.auto_refill = QtWidgets.QCheckBox(Widget)
+        self.auto_refill.setObjectName("auto_refill")
+        self.auto_refill.setText("Auto Refill?")
+        self.formLayout.setWidget(9, QtWidgets.QFormLayout.FieldRole, self.auto_refill)
+
+        self.refill_freq_lbl = QtWidgets.QLabel(Widget)
+        self.refill_freq_lbl.setObjectName("refill_freq_lbl")
+        self.refill_freq_lbl.setText("Refill Period [min]:")
+        self.refill_freq_spin = QtWidgets.QSpinBox(Widget)
+        self.refill_freq_spin.setObjectName("refill_freq_spin")
+        self.refill_freq_spin.setMaximum(240)
+        self.refill_freq_spin.setMinimum(30)
+        self.refill_freq_spin.setValue(120) # this must be updated based on the number of files in the data folder
+        self.formLayout.setWidget(10, QtWidgets.QFormLayout.LabelRole, self.refill_freq_lbl)
+        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.refill_freq_spin)
+
+        self.refill_what_lbl = QtWidgets.QLabel(Widget)
+        self.refill_what_lbl.setObjectName("refill_what_lbl")
+        self.refill_what_lbl.setText("Refill With:")
+        self.refill_what_combo = QtWidgets.QComboBox(Widget)
+        self.refill_what_combo.setObjectName("refill_what_combo")
+        self.refill_what_combo.addItem("Tank Water")
+        self.refill_what_combo.addItem("Supply Water")
+        self.refill_what_combo.addItem("RO Water")
+        self.formLayout.setWidget(11, QtWidgets.QFormLayout.LabelRole, self.refill_what_lbl)
+        self.formLayout.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.refill_what_combo)
+
         self.run_numb_lbl = QtWidgets.QLabel(Widget)
         self.run_numb_lbl.setObjectName("run_numb_lbl")
         self.run_numb_lbl.setText("Run Number:")
@@ -142,15 +169,15 @@ class Ui_Widget(object):
         self.run_numb_line.setMaximum(1000000)
         self.run_numb_line.setMinimum(0)
         self.run_numb_line.setValue(0) # this must be updated based on the number of files in the data folder
-        self.formLayout.setWidget(9, QtWidgets.QFormLayout.LabelRole, self.run_numb_lbl)
-        self.formLayout.setWidget(9, QtWidgets.QFormLayout.FieldRole, self.run_numb_line)
+        self.formLayout.setWidget(12, QtWidgets.QFormLayout.LabelRole, self.run_numb_lbl)
+        self.formLayout.setWidget(12, QtWidgets.QFormLayout.FieldRole, self.run_numb_line)
 
         self.start_data_but = QtWidgets.QPushButton(Widget)
         self.start_data_but.setObjectName("start_data_but")
         self.start_data_but.setText("Start Run")
-        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.start_data_but)
+        self.formLayout.setWidget(13, QtWidgets.QFormLayout.FieldRole, self.start_data_but)
 
-        bottom_start_index = 11
+        bottom_start_index = 14
 
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.formLayout.setItem(bottom_start_index,  QtWidgets.QFormLayout.FieldRole, spacerItem)

@@ -132,6 +132,9 @@ class main_window(QMainWindow):
             self.ui.control_widget.start_signal.connect(self.daq_worker.start_data_taking)
             self.ui.control_widget.stop_signal.connect(self.daq_worker.stop_data_taking)
             self.daq_worker.change_wavelength.connect(self.ui.control_widget.change_wavelength)
+            self.daq_worker.message_signal.connect(self.thread_message)
+            self.ui.pipes.refill_complete.connect(self.daq_worker.refill_complete)
+            self.daq_worker.refill_signal.connect(self.ui.pipes.refill_handler)
             
         except Exception as e:
             self.dialog = WarnWidget(parent=self, message="Critical Error {}".format(e))

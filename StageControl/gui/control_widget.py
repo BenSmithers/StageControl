@@ -19,7 +19,7 @@ class ControlWidget(QtWidgets.QWidget):
     
     # called when it's done doing things
     done_signal = pyqtSignal()
-    start_signal = pyqtSignal(bool)
+    start_signal = pyqtSignal(bool, int, int )
     stop_signal = pyqtSignal()
 
 
@@ -37,6 +37,7 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.waterlabel_lbl.clicked.connect(self.write_new_name)
         self.ui.test_email.clicked.connect(self.test_email)
         self.ui.start_data_but.clicked.connect(self.run_button)
+        self.ui.auto_refill.clicked.connect(self.auto_refill_toggle)
         self.start_mode = True 
 
         self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
@@ -99,6 +100,11 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_done = False 
         self._adc_done = False
         self._stage_done = False 
+        self.auto_refill_toggle()
+
+    def auto_refill_toggle(self):
+        self.ui.refill_freq_spin.setEnabled(self.ui.auto_refill.isChecked())
+        self.ui.refill_what_combo.setEnabled(self.ui.auto_refill.isChecked())
 
 
     def run_button(self):
@@ -119,7 +125,19 @@ class ControlWidget(QtWidgets.QWidget):
                 "mHz" if self.ui.rate_combo.currentIndex()==1 else "kHz"
             ))
 
-            self.start_signal.emit(striping)
+            refill_period = self.ui.refill_freq_spin.value()
+            auto_refill = self.ui.auto_refill.isChecked()
+            selected = self.ui.refill_what_combo.currentIndex()
+            """
+                0 - tank 
+                1 - supply 
+                2 - osmosis
+            """
+            if auto_refill:
+                option = selected+1
+            else:
+                option = 0
+            self.start_signal.emit(striping, option, refill_period)
             self.ui.start_data_but.setText("Stop Run")
             
             self.ui.adc_spin.setEnabled(False)

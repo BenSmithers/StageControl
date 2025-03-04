@@ -29,9 +29,14 @@ class Ui_Form(object):
         self.verticalLayout.addWidget(self.drain_button)
 
         self.fill_filter = QtWidgets.QPushButton(Form)
-        self.fill_filter.setText("Fill with Filtered")
+        self.fill_filter.setText("Fill with Supply Wayer")
         #self.fill_filter.setEnabled(False)
         self.verticalLayout.addWidget(self.fill_filter)
+
+        self.fill_return = QtWidgets.QPushButton(Form)
+        self.fill_return.setText("Fill with Return Water")
+        #self.fill_filter.setEnabled(False)
+        self.verticalLayout.addWidget(self.fill_return)
 
         self.fill_osmosis = QtWidgets.QPushButton(Form)
         self.fill_osmosis.setText("Fill with Osmosis")
