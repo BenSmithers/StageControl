@@ -239,7 +239,7 @@ class ControlWidget(QtWidgets.QWidget):
         _obj = open(self._write_to, 'at')
         
         if self.ui.rotate_wave.isChecked():            
-            _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, rec, mon, self.ui.adc_spin.value(), wavelen, ))
+            _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, mon, rec, self.ui.adc_spin.value(), wavelen, ))
         _obj.close()
     
     @pyqtSlot()
@@ -287,10 +287,12 @@ class ControlWidget(QtWidgets.QWidget):
         elif "GS" in packet["response"].decode():
             self.insert_text("GS Status response: {}\n".format(data)) 
 
-            self.dialog = WarnWidget(parent=self,message="Notice! Linear stage returned status: {}".format(data))
-            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-            self.dialog.ui.buttonBox.helpRequested.connect(self.help)
-            self.dialog.exec_() 
+            position = self.ui.positionSpin.value()
+            self.move_signal.emit(position)
+            #self.dialog = WarnWidget(parent=self,message="Notice! Linear stage returned status: {}".format(data))
+            #self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            #self.dialog.ui.buttonBox.helpRequested.connect(self.help)
+            #self.dialog.exec_() 
         elif "IN" in packet["response"].decode():
             for entry in data:
                 self.insert_text("Begin Info Response Dump\n")

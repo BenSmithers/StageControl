@@ -33,6 +33,7 @@ class USBWorker(QObject):
     @pyqtSlot()
     def initialize(self):
         self._conn = ELLxConnection(self._stage_path, fake=fake)
+        self._conn.go_home()
         self._board = LEDBoard(self._led_path, fake=fake)
         self._board.enable()
         self._board.set_int_trigger()
@@ -70,7 +71,8 @@ class USBWorker(QObject):
 
     @pyqtSlot(float)
     def move_absolute(self, position):
-        self._conn.go_home()
+#        self._conn.go_home()
+#        time.sleep(1)
         packet = self._conn.move_absolute(position)
         self.ELLxSignal.emit(packet)
 

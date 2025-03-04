@@ -78,6 +78,14 @@ class PipesWidget(QtWidgets.QWidget):
         self._draining_open_tank = False
         self._overflow_counter = 0
         self._chamber_drain_counter = 0
+        
+        """
+            0 - Pressurizing System
+            1 - Filling osmosis chamber
+            2 - draining osmosis chamber in to test chamber 
+        """
+        self._osmo_state_variable = 0
+
 
         self._ncalls = 0
 
@@ -107,11 +115,13 @@ class PipesWidget(QtWidgets.QWidget):
     def stop_button(self):
         self.ui.status_label.setText("... Awaiting Input")
         self.enable_all()
+       
+        self.ui.bv5_button.setChecked(False)
         self.ui.bv1_button.setChecked(False)
         self.ui.bv2_button.setChecked(False)
         self.ui.bv3_button.setChecked(False)
         self.ui.bv4_button.setChecked(False)
-        self.ui.bv5_button.setChecked(False)
+
         self.ui.bv6_button.setChecked(False)
         self.ui.sv1_button.setChecked(False)
         self.ui.sv2_button.setChecked(False)
@@ -142,8 +152,9 @@ class PipesWidget(QtWidgets.QWidget):
         self._draining = True 
         self._filling_osmo = True  
         self._filling_filter = False 
+        self._osmo_state_variable = 0
         self.disable_all()
-        self.ui.status_label.setText("... DRAINING")
+        self.ui.status_label.setText("... Draining")
         self.ui.stop_button.setEnabled(True)
     def fill_filtered_clicked(self):
         self._automated = True 
@@ -276,11 +287,13 @@ class PipesWidget(QtWidgets.QWidget):
         """
             Disable the buttons, makes the gui non-interactable 
         """
+        
+        self.ui.bv5_button.setEnabled(False)
         self.ui.bv1_button.setEnabled(False)
         self.ui.bv2_button.setEnabled(False)
         self.ui.bv3_button.setEnabled(False)
         self.ui.bv4_button.setEnabled(False)
-        self.ui.bv5_button.setEnabled(False)
+
         self.ui.bv6_button.setEnabled(False)
         self.ui.sv1_button.setEnabled(False)
         self.ui.sv2_button.setEnabled(False)
@@ -536,43 +549,121 @@ class PipesWidget(QtWidgets.QWidget):
                     
 
             elif self._filling_filter or self._filling_osmo:
-                self.ui.status_label.setText("... FILLING")
-                overflow = flows[2]
-                # first time around, these will both be turned off, so we don't turn bv6 on yet! 
-                # bv6 will be turned on the _second_ time this is reached 
-                if self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked():
-                    self.ui.bv6_button.setChecked(True)
-                    self.ui.sv3_button.setChecked(True)
+                
 
-                self.ui.pu1_button.setChecked(True)
-                self.ui.sv1_button.setChecked(True)
-                self.ui.sv2_button.setChecked(True)
+                filling = flows[1]
+                overflow = flows[2]
 
                 if self._filling_filter:
-                    self.ui.bv1_button.setChecked(True)
-                elif self._filling_osmo:
+
+                    self.ui.status_label.setText("... FILLING")
+                    # first time around, these will both be turned off, so we don't turn bv6 on yet! 
+                    # bv6 will be turned on the _second_ time this is reached 
+                    if self.ui.sv1_button.isChecked() and self.ui.sv2_button.isChecked():
+                        self.ui.bv6_button.setChecked(True)
+                        self.ui.sv3_button.setChecked(True)
+
+                    self.ui.pu1_button.setChecked(True)
+                    self.ui.sv1_button.setChecked(True)
+                    self.ui.sv2_button.setChecked(True)
+
+                if self._filling_filter:
+                    pass # now making it use supply water and not tank water
+                    #self.ui.bv1_button.setChecked(True)
+                else:
+
+
                     self.ui.bv5_button.setChecked(True)
+                    if self._osmo_state_variable==0: # pressurizing chamber
+                         
+                        self.ui.status_label.setText("Pressurizing")
+                        
+                        self.ui.pu1_button.setChecked(True)
+                        self.ui.sv1_button.setChecked(True)
+                        self.ui.sv2_button.setChecked(False)
+                        self.ui.bv6_button.setChecked(True)
+
+                        self.ui.sv3_button.setChecked(False)
+                        if any(pressures>70):
+                            self._osmo_state_variable=1
+                            self.ui.pu1_button.setChecked(False)
+                        if pressures[3]>24:
+                            self._osmo_state_variable=2
+
+                            self.ui.sv2_button.setChecked(True)
+                    elif self._osmo_state_variable==1: # Waiting for pressure to drop
+                        self.ui.status_label.setText("Filling RO Tank")
+                        self.ui.bv5_button.setChecked(True)
+                        self.ui.bv6_button.setChecked(True)                       
+                        self.ui.pu1_button.setChecked(False)
+
+                        self.ui.sv3_button.setChecked(False)
+                        if pressures[3]>24:
+                            self._osmo_state_variable=2 
+                            self.ui.sv2_button.setChecked(True)
+                        elif pressures[0]<48:
+                            self._osmo_state_variable=0
+
+                    elif self._osmo_state_variable==2:
+                        self.ui.status_label.setText("Filling Chamber")
+                        self.ui.pu2_button.setChecked(False)
+                        self.ui.bv5_button.setChecked(True)
+                        
+                        self.ui.sv3_button.setChecked(True)
+                        self.ui.sv1_button.setChecked(True)
+                        self.ui.sv2_button.setChecked(True)
+                        self.ui.bv6_button.setChecked(True)
+                        self.ui.pu1_button.setChecked(False)
+                        self._osmo_state_variable=3
+                    elif self._osmo_state_variable==3:
+                        if pressures[3]<5.6:
+                            self._osmo_state_variable=0
+                            self.ui.sv2_button.setChecked(False)
+                            self.ui.status_label.setText("Pressurizing")
+                    elif self._osmo_state_variable==4:
+                        self._osmo_state_variable=5
+                        self.ui.bv5_button.setChecked(False)
+
+                    else:
+                        self.ui.sv1_button.setChecked(False)
+                        self.ui.sv2_button.setChecked(False)
+                        self._filling_osmo=False
+                        self._automated=False                      
+                        self._filling_filter= False
+                        self._overflow_counter = 0
+                        self.enable_all()
+                        self.ui.stop_button.setEnabled(False)
+                        self.ui.status_label.setText("... Done!")
 
                 if overflow:
                     self._overflow_counter+=1
 
                     if self._overflow_counter>3:
+                       
+                        self.ui.bv6_button.setChecked(False)
                         self.ui.sv3_button.setChecked(False)
                         self.ui.bv1_button.setChecked(False)
-                        self.ui.sv1_button.setChecked(False)
-                        self.ui.bv2_button.setChecked(False)
                         self.ui.bv4_button.setChecked(False)
-                        self.ui.bv5_button.setChecked(False)
-                        self.ui.bv6_button.setChecked(False)
+
                         self.ui.sv2_button.setChecked(False)
                         self.ui.pu1_button.setChecked(False)
-                        self._filling_filter = False 
-                        self._filling_osmo = False 
-                        self._automated = False
-                        self._overflow_counter = 0
-                        self.enable_all()
-                        self.ui.stop_button.setEnabled(False)
-                        self.ui.status_label.setText("... Done!")
+                        if self._filling_osmo:
+                            self.ui.sv2_button.setChecked(True)
+                            self.ui.sv1_button.setChecked(True)
+                            self.ui.bv5_button.setChecked(True)
+                            self._osmo_state_variable=4
+                        else:
+                            self.ui.bv5_button.setChecked(False)
+                            self.ui.sv2_button.setChecked(False)
+                            self.ui.sv1_button.setChecked(False)
+    
+                            self._filling_filter = False 
+                            self._filling_osmo = False 
+                            self._automated = False
+                            self._overflow_counter = 0
+                            self.enable_all()
+                            self.ui.stop_button.setEnabled(False)
+                            self.ui.status_label.setText("... Done!")
                 else:
                     self._overflow_counter = 0
         
