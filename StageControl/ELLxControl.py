@@ -65,8 +65,15 @@ class ELLxConnection:
             raw_response = self._con.readline()
             resp = message.response_handler(raw_response)
         else:
-            raw_response = b"0PO"+ _encode_signed_long(args[0], 8)
-            resp = message.response_handler(raw_response)
+            print(args)
+            if len(args)==0:
+                raw_response = b"0HO"+ _encode_signed_long(2, 8)
+                resp = message.response_handler(raw_response)
+            else:    
+                raw_response = b"0PO"+ _encode_signed_long(args[0], 8)
+                resp = message.response_handler(raw_response)
+
+
 
 
         data = {
