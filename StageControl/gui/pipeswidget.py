@@ -67,6 +67,12 @@ class PipesWidget(QtWidgets.QWidget):
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
 
+        self.refill_timer = QtCore.QTimer(self)
+        self.refill_timer.timeout.connect(self.refill_handler)
+        self._refill_kind = -1
+        self._refill_timeout = -1
+        self._auto_refill_enabled = False
+
         self.alarm_timer = QtCore.QTimer(self)
         self.alarm_timer.timeout.connect(self.flash)
 
@@ -152,11 +158,24 @@ class PipesWidget(QtWidgets.QWidget):
         self.disable_all() # while automatically doing things, we don't want the user tweaking the configuration of the gui
         self.ui.stop_button.setEnabled(True)
 
-    @pyqtSlot(int)
-    def refill_handler(self, which):
-        if which==0:
+
+    @pyqtSlot(int, int)
+    def start_auto_refill(self, kind, timeout):
+        self._refill_kind = kind 
+        self._refill_timeout = timeout
+        self._auto_refill_enabled = True
+        self.refill_handler()
+
+    @pyqtSlot()
+    def stop_auto_refill(self):
+        self.refill_timer.stop()
+        self._refill_kind = -1
+        self._refill_timeout = -1
+        self._auto_refill_enabled = False
+    def refill_handler(self):
+        if self._refill_kind==0:
             self.fill_tank_clicked()
-        elif which==1:
+        elif self._refill_kind==1:
             self.fill_filtered_clicked()
         else:
             raise NotImplementedError("Auto-Filling Osmosis is not supported!")
@@ -664,7 +683,8 @@ class PipesWidget(QtWidgets.QWidget):
                         self.enable_all()
                         self.ui.stop_button.setEnabled(False)
                         self.ui.status_label.setText("... Done!")
-                        self.refill_complete.emit()
+                        if self._auto_refill_enabled:
+                            self.refill_timer.start(self._refill_timeout*60*1000) 
 
                 if overflow:
                     self._overflow_counter+=1
@@ -696,7 +716,8 @@ class PipesWidget(QtWidgets.QWidget):
                             self.enable_all()
                             self.ui.stop_button.setEnabled(False)
                             self.ui.status_label.setText("... Done!")
-                            self.refill_complete.emit()
+                            if self._auto_refill_enabled:
+                                self.refill_timer.start(self._refill_timeout*60*1000) 
                 else:
                     self._overflow_counter = 0
         if not self._fake: 
