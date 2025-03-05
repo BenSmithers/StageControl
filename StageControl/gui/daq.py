@@ -19,7 +19,6 @@ class DAQWorker(QObject):
 
     # wavelength, triggers, monitors, receivers 
     data_recieved = pyqtSignal(int, int, int, int)
-    refill_signal = pyqtSignal(int)
     message_signal = pyqtSignal(str)
     
     MAX_WAVE = 5
@@ -28,9 +27,6 @@ class DAQWorker(QObject):
         self._timer = QTimer()
         self._timer.timeout.connect(self.measure)
 
-        self._refillTimer = QTimer()
-        self._refillTimer.timeout.connect(self.refill_time)
-        self._refill_time = 0 # minutes 
         
         """
             0 - don't refill
@@ -44,20 +40,9 @@ class DAQWorker(QObject):
         self._is_striping = False
         self._running = False
 
-    @pyqtSlot()
-    def refill_complete(self):
-        if self._refill_time>45 and self._refill_time<240 and self._running:
-                self._refillTimer.start(self._refill_time*60*1000) 
-        self.message_signal.emit("Refill Complete")
 
-
-    def refill_time(self):
-        if self._running:
-            self.refill_signal.emit(self._refill_kind - 1)  
-            self.message_signal.emit("Starting Refill")
-
-    @pyqtSlot(bool, int, int)
-    def start_data_taking(self, is_striping:bool, auto_refill:int, refill_time = -1):
+    @pyqtSlot(bool)
+    def start_data_taking(self, is_striping:bool):
         self._is_striping = is_striping
         self._last_wave = 1 
         self._running = True 
@@ -66,13 +51,6 @@ class DAQWorker(QObject):
             self.change_wavelength.emit(self._last_wave )
         else:
             self.measure()
-
-        if auto_refill>0: # 0 means don't refill
-            # 3 is still osmosis and not supported!
-            if refill_time>45 and refill_time<240 and auto_refill>0 and auto_refill<3:
-                self._refill_time = refill_time
-                self._refill_kind = auto_refill
-                self.refill_time()
         self.message_signal.emit("Starting run")
                 
 
@@ -86,7 +64,6 @@ class DAQWorker(QObject):
         self._last_wave = 1
         self._is_striping = False
         self._running = False
-        self._refillTimer.stop()
         self.message_signal.emit("Stopping run")
 
     @pyqtSlot()

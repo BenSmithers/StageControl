@@ -21,6 +21,7 @@ class ControlWidget(QtWidgets.QWidget):
     done_signal = pyqtSignal()
     start_signal = pyqtSignal(bool, int, int )
     stop_signal = pyqtSignal()
+    start_refil = pyqtSignal(int, int)
 
 
     def __init__(self, parent:QWidget):
@@ -133,11 +134,11 @@ class ControlWidget(QtWidgets.QWidget):
                 1 - supply 
                 2 - osmosis
             """
+
+            self.start_signal.emit(striping)
             if auto_refill:
-                option = selected+1
-            else:
-                option = 0
-            self.start_signal.emit(striping, option, refill_period)
+                self.start_refil.emit(selected, refill_period)
+            
             self.ui.start_data_but.setText("Stop Run")
             
             self.ui.adc_spin.setEnabled(False)
