@@ -245,7 +245,6 @@ def main():
     #    adc2mVChBMax = bufferCompleteB
     #    adc2mVChDMax = bufferCompleteD
         conv_t_end = time.time()
-        #print("Conversion took {} seconds".format(conv_t_end - conv_t))
         # Create time data
         time_sample = np.linspace(0, (totalSamples - 1) * actualSampleIntervalNs, totalSamples)
         
@@ -270,10 +269,7 @@ def main():
         is_good = get_valid(ctime, rectime, False).astype(int)
         
         nmon = np.sum(is_good)
-        if HEIGHT:
-            heights = peaks[1]["peak_heights"].tolist()
-            b_heights+=heights
-        
+       
         crossings = np.diff(np.sign(-adc2mVChDMax - thresh))
         crossings[crossings>0]=0
         crossings = np.where(crossings)
@@ -281,59 +277,22 @@ def main():
         montime = time_sample[crossings[0]]
         is_good = get_valid(ctime, montime, True).astype(int)
         
-        if HEIGHT:
-            heights = peaks[1]["peak_heights"].tolist()
-            d_heights += heights 
-
         nrec = np.sum(is_good)
-        if DEBUG:
-            print(nmon, nrec)
 
         t_total += ntrig
         mon_total +=nmon
         rec_total +=nrec
 
         end = time.time()
-    #    print("Peak finding takes {}".format(end - conv_t_end))
-        #   print("Took {} seconds".format(end -start))
 
         # the number of those crossing times is the number of pulses! 
-        #print("Counted {} pulses; {} per second".format(len(ctime), len(ctime)/(end-start)))
-        if ntrig>0:
-            print("Rates {:.4f}, {:.4f}".format(nmon/ntrig, nrec/ntrig))
-        else:
-            print(" {:.4f}, {:.4f}".format(nmon, nrec))
-            
+                    
         nns += len(adc2mVChAMax)*8
             
-        #print("Rate: ", (1e-3)*nmon/(nns*1e-9), (1e-3)*nrec/(nns*1e-9))
         loops +=1
         if (time.time() - collection_start)>collection_time:
             break
 
-        if DEBUG:
-            # Plot data from channel A and B
-            plt.plot(time_sample, adc2mVChAMax/1000, label="Trig/1000") #/adc2mVChAMax.max())
-            plt.plot(time_sample, adc2mVChBMax, label="Mon") #/adc2mVChBMax.max())
-            plt.plot(time_sample, adc2mVChDMax, label="Rec")
-            plt.vlines(ctime, 0 ,1, color='red')
-            #plt.plot(time, adc2mVChBMax[:])
-            plt.xlabel('Time (ns)')
-            plt.ylabel('Voltage (mV)')
-            plt.show()
-            break 
-
-    # write!
-    if True:
-        print("Total Rate, {:.2f}, {:.2f}".format((1e-3)*nmon/(nns*1e-9), (1e-3)*nrec/(nns*1e-9)))
-    if HEIGHT:
-        bins = np.linspace(0, 100, 128)
-        plt.stairs(np.histogram(b_heights, bins)[0], bins, label="Mon")
-        plt.stairs(np.histogram(d_heights, bins)[0], bins, label="Rec")
-        plt.legend()
-        plt.yscale('log')
-        plt.xlabel("mV",size=14)
-        plt.show()
     # Stop the scope
     # handle = chandle
     status["stop"] = ps.ps3000aStop(chandle)
@@ -349,5 +308,4 @@ def main():
 if __name__=="__main__":
     t, m, r = main()
 
-    print(m/t,r/t)
 
