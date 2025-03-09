@@ -68,6 +68,25 @@ The buttons:
 
 # What to do when... 
 
+## Air keeps getting pumped into the return line. 
+
+This happens when there is no water in the open tank (the white plastic drum), but the return pump keeps running (a relatively quiet pump). 
+If this keeps happening, turn the WMS cabinet off (you will see the green lights turn off), and contact the experts (Ben Smithers - bsmithers@triumf.ca - CERN Phone 69399).
+
+## Major Leak is found
+
+If a major leak occurs, like a pipe becoming unseated or worse. 
+
+1. Stop the leak if possible. 
+2. Isolate the system. 
+3. Fix the leak, if possible. 
+4. Contact the experts (see above)
+
+You can probably hold your finger over an unseated tube. 
+
+The system can be isolated by closing the valves in the corner between the WMS cabinet, the WCTE tank, and the wall. 
+ 
+
 ## You get a high-pressure warning
 The system should automatically turn SV1, SV2, and PU1 off.
 If it does not, make sure those boxes do not have a check-mark. 
@@ -79,6 +98,21 @@ Then, contact [Add name and contact later so it's not on github].
 
 This is likely the UV sterilizer. Power the UV sterilizer down and then contact [Add name and contact later so it's not on github]. 
 Note: you will probably have to physically flip a switch or unplug a cable. You can not power up or power down the UV sterilizer through the GUI.
+
+## You see mechanical timeout errors
+
+Don't worry about those
+
+## A problem not mentioned here. 	
+
+Often, it's useful to just restart the whole thing.
+
+1. On the `Control` tab, press "Stop Run" if that button is there. 
+2. On the `Pump Operations` tab, press "Stop Automation" if that button is click-abble and enabled. 
+3. On that tab, if any checkboxes were checked, uncheck them. 
+4. Close the window. Press Yes.
+5. Restart the gui. In the open terminal re-run `python launch.py` 
+
 
 ## You get a [...] not found error
 
