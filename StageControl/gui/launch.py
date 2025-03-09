@@ -118,6 +118,8 @@ class main_window(QMainWindow):
         self.daq_threadman.start()
         self.init_daq()
 
+        self.ui.pipes.refill_complete.connect(self.ui.plot_widg.update_filltime)
+
         self.setWindowTitle("WCTE Water Control System")
         self.ui.filepathEdit.setText("/home/watermon/software/PicoCode/data/{}".format(self.ui.control_widget._write_to))
         self.ui.filepathEdit.doubleClicked.connect(self.declick)
@@ -128,6 +130,7 @@ class main_window(QMainWindow):
             self.daq_worker = DAQWorker()
             self.daq_worker.moveToThread(self.daq_threadman)
             self.daq_worker.data_recieved.connect(self.ui.control_widget.write_data)
+            self.daq_worker.data_recieved.connect(self.ui.plot_widg.plot_wrap)
             self.daq_worker.change_wavelength.connect(self.ui.control_widget.change_wavelength)
             self.daq_worker.message_signal.connect(self.thread_message)
             #self.daq_worker.refill_signal.connect(self.ui.pipes.refill_handler)
