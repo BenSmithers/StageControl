@@ -19,7 +19,7 @@ class ControlWidget(QtWidgets.QWidget):
     
     # called when it's done doing things
     done_signal = pyqtSignal()
-    start_signal = pyqtSignal(bool, int, int )
+    start_signal = pyqtSignal(bool)
     stop_signal = pyqtSignal()
     start_refil = pyqtSignal(int, int)
 

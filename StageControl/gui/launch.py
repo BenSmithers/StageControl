@@ -48,25 +48,25 @@ class USBWorker(QObject):
             msg=self._board.set_slow_rate()
         else:
             msg=self._board.set_fast_rate()
-        self.StatusSignal.emit(msg)
+        #self.StatusSignal.emit(msg)
     
     @pyqtSlot(int)
     def set_adc(self, new_value):
         msg=self._board.set_adc(int(new_value))
-        self.StatusSignal.emit(msg)
+        #self.StatusSignal.emit(msg)
         self.adc_changed_signal.emit()
 
     @pyqtSlot(int)
     def activate_led(self, led_no):
         msg=self._board.activate_led(led_no)
-        self.StatusSignal.emit(msg)
+        #self.StatusSignal.emit(msg)
         self.led_changed_signal.emit()
 
     @pyqtSlot()
     def disable_board(self):
         self._board.disable()
-        self.StatusSignal.emit("LED - L0\n")
-        self.StatusSignal.emit("LED - D\n")
+        #self.StatusSignal.emit("LED - L0\n")
+        #self.StatusSignal.emit("LED - D\n")
 
 
     @pyqtSlot(float)

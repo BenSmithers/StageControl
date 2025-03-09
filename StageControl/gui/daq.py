@@ -73,7 +73,14 @@ class DAQWorker(QObject):
             If we aren't doing "striping" we immediately send the data-log signal and wait 30 seconds before starting again
         """
         if self._running:
-            trig, mon, rec = main()
+            try:
+                trig, mon, rec = main()
+            except Exception as e:
+                self.message_signal.emit(e)
+                trig = 0
+                mon = 0
+                rec = 0
+
             if self._is_striping:
                 self.data_recieved.emit(self._last_wave, trig, mon, rec)
                 self._last_wave+=1 

@@ -254,14 +254,14 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.label.setText(_translate("Form", "Valves"))
+        self.label.setText(_translate("Form", "Ball Valves"))
         self.bv1_button.setText(_translate("Form", "BV1 (Tank Water)"))
         self.bv2_button.setText(_translate("Form", "BV2 (Filters)"))
         self.bv3_button.setText(_translate("Form", "BV3 (UV Lamp)"))
         self.bv4_button.setText(_translate("Form", "BV4 (Ion Filter)"))
         self.bv5_button.setText(_translate("Form", "BV5 (Osmosis)"))
         self.bv6_button.setText(_translate("Form", "BV6 (Chamber)"))
-        self.label_2.setText(_translate("Form", "Valves"))
+        self.label_2.setText(_translate("Form", "Solenoid Valves"))
         self.sv1_button.setText(_translate("Form", "SV1 (main)"))
         self.sv2_button.setText(_translate("Form", "SV2 (Pre-Chamber)"))
         self.sv3_button.setText(_translate("Form", "SV3 (Gas Removal)"))

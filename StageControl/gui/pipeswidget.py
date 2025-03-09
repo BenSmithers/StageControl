@@ -124,19 +124,22 @@ class PipesWidget(QtWidgets.QWidget):
     def stop_button(self):
         self.ui.status_label.setText("... Awaiting Input")
         self.enable_all()
-       
+        
+        self.ui.bv6_button.setChecked(False)
+        self.ui.sv3_button.setChecked(False) 
+
+        self.ui.pu1_button.setChecked(False)
+        self.ui.pu2_button.setChecked(False)
+
         self.ui.bv5_button.setChecked(False)
+        
         self.ui.bv1_button.setChecked(False)
         self.ui.bv2_button.setChecked(False)
         self.ui.bv3_button.setChecked(False)
         self.ui.bv4_button.setChecked(False)
 
-        self.ui.bv6_button.setChecked(False)
         self.ui.sv1_button.setChecked(False)
         self.ui.sv2_button.setChecked(False)
-        self.ui.pu1_button.setChecked(False)
-        self.ui.pu2_button.setChecked(False)
-        self.ui.pu3_button.setChecked(False)
         self._automated = False
         self._draining = False 
         self._filling_filter = False 
@@ -173,6 +176,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._refill_timeout = -1
         self._auto_refill_enabled = False
     def refill_handler(self):
+        self._logger.insert_text("Auto Refill Time \n") 
         if self._refill_kind==0:
             self.fill_tank_clicked()
         elif self._refill_kind==1:
@@ -201,6 +205,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.stop_button.setEnabled(True)
 
     def fill_tank_clicked(self):
+
         self._automated = True 
         self._draining = True 
         self._filling_filter = False 
@@ -362,7 +367,6 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.sv2_button.setChecked(False)
         self.ui.pu1_button.setChecked(False)
         self.ui.pu2_button.setChecked(False)
-        self.ui.pu3_button.setChecked(False)
 
     def enable_all(self):
         self.ui.bv1_button.setEnabled(True)
@@ -483,6 +487,16 @@ class PipesWidget(QtWidgets.QWidget):
         if self._fake:
             pressures, flows, temperature = self._generate_testdata()
         #else:
+        lvl1 = self.ui.water_lvl1.isChecked()
+        lvl2 = self.ui.water_lvl2.isChecked()
+       
+        if lvl2:
+            self._draining_open_tank = True
+            self.ui.pu3_button.setChecked(self._draining_open_tank)
+        if not lvl1:
+            self._draining_open_tank = False 
+            self.ui.pu3_button.setChecked(self._draining_open_tank)
+
 
         ### --------------------------- Check time since last update --------------------------
 
@@ -635,7 +649,7 @@ class PipesWidget(QtWidgets.QWidget):
                         if any(pressures>70):
                             self._osmo_state_variable=1
                             self.ui.pu1_button.setChecked(False)
-                        if pressures[3]>24:
+                        if pressures[3]>22:
                             self._osmo_state_variable=2
 
                             self.ui.sv2_button.setChecked(True)
@@ -646,7 +660,7 @@ class PipesWidget(QtWidgets.QWidget):
                         self.ui.pu1_button.setChecked(False)
 
                         self.ui.sv3_button.setChecked(False)
-                        if pressures[3]>24:
+                        if pressures[3]>22:
                             self._osmo_state_variable=2 
                             self.ui.sv2_button.setChecked(True)
                         elif pressures[0]<48:
@@ -664,14 +678,14 @@ class PipesWidget(QtWidgets.QWidget):
                         self.ui.pu1_button.setChecked(False)
                         self._osmo_state_variable=3
                     elif self._osmo_state_variable==3:
-                        if pressures[3]<5.6:
+                        if pressures[3]<5.6 or pressures[0]<35:
                             self._osmo_state_variable=0
                             self.ui.sv2_button.setChecked(False)
                             self.ui.status_label.setText("Pressurizing")
                     elif self._osmo_state_variable==4:
                         self._osmo_state_variable=5
                         self.ui.bv5_button.setChecked(False)
-
+                        self._overflow_counter = 0
                     else:
                         self.ui.sv1_button.setChecked(False)
                         self.ui.sv2_button.setChecked(False)
@@ -684,24 +698,27 @@ class PipesWidget(QtWidgets.QWidget):
                         self.ui.stop_button.setEnabled(False)
                         self.ui.status_label.setText("... Done!")
                         if self._auto_refill_enabled:
+                            self.refill_complete.emit()
+                            self._logger.insert_text("TUBEFULL\n")
                             self.refill_timer.start(self._refill_timeout*60*1000) 
 
                 if overflow:
                     self._overflow_counter+=1
 
-                    if self._overflow_counter>3:
+                    if self._overflow_counter>5:
                        
                         self.ui.bv6_button.setChecked(False)
                         self.ui.sv3_button.setChecked(False)
+                        self.ui.pu1_button.setChecked(False)
+
                         self.ui.bv1_button.setChecked(False)
                         self.ui.bv4_button.setChecked(False)
 
-                        self.ui.sv2_button.setChecked(False)
-                        self.ui.pu1_button.setChecked(False)
                         if self._filling_osmo:
                             self.ui.sv2_button.setChecked(True)
                             self.ui.sv1_button.setChecked(True)
                             self.ui.bv5_button.setChecked(True)
+                            self._overflow_conter = 0
                             self._osmo_state_variable=4
                         else:
                             self.ui.bv5_button.setChecked(False)
@@ -717,6 +734,8 @@ class PipesWidget(QtWidgets.QWidget):
                             self.ui.stop_button.setEnabled(False)
                             self.ui.status_label.setText("... Done!")
                             if self._auto_refill_enabled:
+                                self.refill_complete.emit()
+                                self._logger.insert_text("TUBEFULL\n")
                                 self.refill_timer.start(self._refill_timeout*60*1000) 
                 else:
                     self._overflow_counter = 0

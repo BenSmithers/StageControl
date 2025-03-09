@@ -233,7 +233,7 @@ class Ui_Widget(object):
         self.textBrowser.setTextColor(QtGui.QColor(0, 255, 0))
         self.textBrowser.setStyleSheet("background-color: black;")
         self.textBrowser.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignBottom)
-        self.textBrowser.setEnabled(False)
+#        self.textBrowser.setEnabled(False)
         self.textBrowser.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
 
         self.verticalLayout.addWidget(self.textBrowser)
