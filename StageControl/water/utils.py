@@ -21,9 +21,8 @@ def load_log():
     return np.array(timestamps, dtype=float)
 
 
-FILL_TIMES = load_log()
-
 def get_fill_times(times):
+    FILL_TIMES = load_log()
     mint = times.min()
     maxt = times.max()
 
@@ -61,7 +60,7 @@ def build_bounds(filepath:str):
 
 
     for it in range(len(fills)):
-        if it==0:
+        if it==0 or it==4 or it==(len(fills)-1):
             continue
 
         mintime = fills[it]

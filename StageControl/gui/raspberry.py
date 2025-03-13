@@ -45,7 +45,7 @@ class PiConnect(QObject):
             server = HOST,
             username = USER,
             #ssh_key=KEY,
-            password = PASSWORD,
+            #password = PASSWORD,
             port=PORT,
             auto_prompt_reset=False
         )
@@ -76,7 +76,12 @@ class PiConnect(QObject):
         # get response, split by carriage return 
         raw = self._connection.before.decode('UTF-8').split("\r")
         return raw
-    
+   
+    @pyqtSlot(int)
+    def wait(self, amt):
+        _adjust = min([ max([amt, 1]), 5])
+        time.sleep(amt)
+
     @pyqtSlot()
     def interrupt(self):
         self.message_signal.emit("Data not responding. Interrupting python and restarting\n")

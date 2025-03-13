@@ -70,6 +70,9 @@ class ControlWidget(QtWidgets.QWidget):
         self.update_emails()
         self.ui.shift_update.clicked.connect(self.update_emails)
 
+        self._dataclock = QtCore.QTimer(self) 
+        self._dataclock.timeout.connect(self.done_signal)
+
         tts = get_time_to_next_shift()
         self._updater_clock = QtCore.QTimer(self)
         self._updater_clock.timeout.connect(self.auto_update)
@@ -147,19 +150,31 @@ class ControlWidget(QtWidgets.QWidget):
             self.ui.positionSpin.setEnabled(False)
             self.ui.goPosBut.setEnabled(False)
             self.ui.goWaveBut.setEnabled(False)
-            self.ui.rate_combo.setEnabled(False)
+            self.ui.refill_what_combo.setEnabled(False)
+            self.ui.refill_freq_spin.setEnabled(False)
+            self.ui.run_numb_line.setEnabled(False)
+            self.ui.auto_refill.setEnabled(False)
+            self.ui.rotate_wave.setEnabled(False)
+            #self.ui.rate_combo.setEnabled(False)
+            self._dataclock.start(int(1.5*60*1000))
             self._running = True 
         else:
             self.stop_signal.emit()
+            self._dataclock.stop()
             self.ui.start_data_but.setText("Start Run")
             self.ui.run_numb_line.setValue(self.ui.run_numb_line.value() + 1)
+            self.ui.auto_refill.setEnabled(True)
+            self.ui.rotate_wave.setEnabled(True)
             self.ui.adc_spin.setEnabled(True)
             self.ui.waveCombo.setEnabled(True)
             self.ui.rotate_wave.setEnabled(True)
             self.ui.positionSpin.setEnabled(True)
             self.ui.goPosBut.setEnabled(True)
             self.ui.goWaveBut.setEnabled(True)
-            self.ui.rate_combo.setEnabled(True)
+            self.ui.refill_what_combo.setEnabled(True)
+            self.ui.refill_freq_spin.setEnabled(True)
+            self.ui.run_numb_line.setEnabled(True)
+            #self.ui.rate_combo.setEnabled(True)
             self._running = False 
         self.start_mode = not self.start_mode
             
@@ -260,7 +275,7 @@ class ControlWidget(QtWidgets.QWidget):
         if self.ui.rotate_wave.isChecked():            
             _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, mon, rec, self.ui.adc_spin.value(), wavelen, ))
         else:
-            _obj.write("{}, {}, {}, {}".format(time(), trig, mon, rec))
+            _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, mon, rec, self.ui.adc_spin.value(), self.ui.waveCombo.currentIndex()))
         _obj.close()
     
     @pyqtSlot()

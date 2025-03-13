@@ -207,6 +207,7 @@ class main_window(QMainWindow):
             self.ui.pipes.update_plot_signal.connect(self.ui.history.update_plots)
             self.worker_thread.data_signal.connect(self.ui.pipes.data_received)
             self.ui.pipes.pump_signal.connect(self.worker_thread.pump)
+            self.ui.pipes.wait_signal.connect(self.worker_thread.wait)
             self.ui.pipes.bv_signal.connect(self.worker_thread.bv)
             self.ui.pipes.sv_signal.connect(self.worker_thread.sv)
             self.ui.pipes.interrupt_signal.connect(self.worker_thread.interrupt)

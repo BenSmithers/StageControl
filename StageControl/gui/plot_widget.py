@@ -55,7 +55,7 @@ class PlotsWidget(QtWidgets.QWidget):
 
         self._ref_data = {}
         self._filltime = -1
-        self._reference_file = "/home/watermon/software/StageControl/StageControl/gui/picodat/picodat_run23_Return Untreated_various_variousadc_mHz.dat"
+        self._reference_file = "/home/watermon/software/StageControl/StageControl/gui/picodat/picodat_run24_Return Untreated_various_variousadc_mHz.dat"
         self.update_reference()
 
         self.update_plots()
@@ -99,29 +99,30 @@ class PlotsWidget(QtWidgets.QWidget):
 
         data = np.loadtxt(self._filepath, delimiter=",").T 
         
-
+        
         trigger_data = data[1]
-        receiver_data = -1*np.log(1 - data[2]/trigger_data)
-        monitor_data = -1*np.log(1- data[3]/trigger_data)
+        tmask = trigger_data>0
+        receiver_data = -1*np.log(1 - data[2][tmask]/trigger_data[tmask])
+        monitor_data = -1*np.log(1- data[3][tmask]/trigger_data[tmask])
+    
+        if self._filltime==-1:
+            self._filltime = get_fill_times(data[0]) # the _last_ fill time    
 
-
-        if self._filltime==-1: #likely an initialization
-            self._filltime = get_fill_times(data[0]) # the _last_ fill time
+        
             if len(self._filltime)==0:
-                print("No Refills found!")
-                return 
-                
-        self._filltime = self._filltime[-1]
+                self._filltime = data[0][0]
+            else:
+                self._filltime =self._filltime[-1]
 
-        fill_mask = data[0]>=self._filltime
+        fill_mask = data[0][tmask]>=self._filltime
 
         ratio = (monitor_data/receiver_data)[fill_mask]
-        times = (data[0][fill_mask] - self._filltime)/3600
+        times = (data[0][tmask][fill_mask] - self._filltime)/3600
 
         if len(times)==0:
             print("No valid fills found - this is likely older data")
             return 
-        waveno =  data[5][fill_mask]
+        waveno =  data[5][tmask][fill_mask]
         
         for _i in range(len(self._ref_data["mean"])):
             i = _i+1

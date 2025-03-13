@@ -13,6 +13,7 @@ class Ui_Form(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.cbox = QtWidgets.QCheckBox(Form)
         self.cbox.setText("Lock Plot")
+        self.cbox.setChecked(True)
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, Form)

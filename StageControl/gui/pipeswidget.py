@@ -28,6 +28,7 @@ class PipesWidget(QtWidgets.QWidget):
     pump_signal = pyqtSignal(int, bool)
     sv_signal = pyqtSignal(int, bool)
     bv_signal = pyqtSignal(int, bool)
+    wait_signal = pyqtSignal(int)
     interrupt_signal = pyqtSignal()
     update_plot_signal = pyqtSignal()
     refill_complete = pyqtSignal()
@@ -72,13 +73,15 @@ class PipesWidget(QtWidgets.QWidget):
         self._refill_kind = -1
         self._refill_timeout = -1
         self._auto_refill_enabled = False
+        self._osmo_time_keeper=-1
 
         self.alarm_timer = QtCore.QTimer(self)
         self.alarm_timer.timeout.connect(self.flash)
 
         self._fake_chamber = 0
         self._fake_open_tank_lvl = 0
-
+        
+        self._bleeding_osmo = False 
         self._automated = False
         self._draining = False 
         self._filling_filter = False 
@@ -176,13 +179,19 @@ class PipesWidget(QtWidgets.QWidget):
         self._refill_timeout = -1
         self._auto_refill_enabled = False
     def refill_handler(self):
-        self._logger.insert_text("Auto Refill Time \n") 
+        self._logger.insert_text("Auto Refill Time {} \n".format(self._refill_kind)) 
         if self._refill_kind==0:
             self.fill_tank_clicked()
         elif self._refill_kind==1:
             self.fill_filtered_clicked()
         else:
-            raise NotImplementedError("Auto-Filling Osmosis is not supported!")
+            self.fill_osmosis_clicked()
+    def _bleed_osmo(self):
+        self._automated = True 
+        self._bleeding_osmo = True 
+        self.disable_all()
+        self.ui.status_label.setText("... bleeding osmosis")
+        self.ui.stop_button.setEnabled(True)
 
     def fill_osmosis_clicked(self):
         self._automated = True 
@@ -589,7 +598,7 @@ class PipesWidget(QtWidgets.QWidget):
                         self._chamber_drain_counter = 0
                     
                     # once it has been consistently empty for four updates, we stop the draining procedure 
-                    if self._chamber_drain_counter>4:
+                    if self._chamber_drain_counter>10:
                         self._draining = False 
                         # we only need to cleanup if there isn't a second step!
                         if not (self._filling_filter or self._filling_osmo or self._filling_tank):
@@ -608,6 +617,24 @@ class PipesWidget(QtWidgets.QWidget):
                     self.ui.sv2_button.setChecked(False)
                     self.ui.pu2_button.setChecked(True)
                     
+            elif self._bleeding_osmo:
+                self.ui.status_label.setText("Bleeding Osmosis")
+                self.ui.sv2_button.setChecked(True)
+                self.ui.bv5_button.setChecked(True)
+                outflow = flows[4]
+                if not outflow:
+                    self._chamber_drain_counter +=1 
+                else:
+                    self._chamber_drain_counter = 0
+
+                if self._chamber_drain_counter >3:
+                    self._automated = False
+                    self._bleeding_osmo = False
+                    self.ui.bv5_button.setChecked(False)
+                    self.ui.sv2_button.setChecked(False)
+                    self.enable_all()
+                    self.ui.stop_button.setEnabled(False)
+                    self.ui.status_label.setText("... Done!")
 
             elif self._filling_filter or self._filling_osmo or self._filling_tank:
                 
@@ -637,7 +664,7 @@ class PipesWidget(QtWidgets.QWidget):
 
                     self.ui.bv5_button.setChecked(True)
                     if self._osmo_state_variable==0: # pressurizing chamber
-                         
+                        self._osmo_time_keeper = time()     
                         self.ui.status_label.setText("Pressurizing")
                         
                         self.ui.pu1_button.setChecked(True)
@@ -654,19 +681,22 @@ class PipesWidget(QtWidgets.QWidget):
 
                             self.ui.sv2_button.setChecked(True)
                     elif self._osmo_state_variable==1: # Waiting for pressure to drop
+                        now = time()
                         self.ui.status_label.setText("Filling RO Tank")
                         self.ui.bv5_button.setChecked(True)
                         self.ui.bv6_button.setChecked(True)                       
                         self.ui.pu1_button.setChecked(False)
 
                         self.ui.sv3_button.setChecked(False)
-                        if pressures[3]>22:
+                        if pressures[3]>22 or abs(now-self._osmo_time_keeper)/60>1:
                             self._osmo_state_variable=2 
                             self.ui.sv2_button.setChecked(True)
-                        elif pressures[0]<48:
+                        elif pressures[0]<50:
                             self._osmo_state_variable=0
 
+
                     elif self._osmo_state_variable==2:
+                        self._osmo_time_keeper = time()
                         self.ui.status_label.setText("Filling Chamber")
                         self.ui.pu2_button.setChecked(False)
                         self.ui.bv5_button.setChecked(True)
@@ -678,16 +708,21 @@ class PipesWidget(QtWidgets.QWidget):
                         self.ui.pu1_button.setChecked(False)
                         self._osmo_state_variable=3
                     elif self._osmo_state_variable==3:
+                        self._osmo_time_keeper = time()
                         if pressures[3]<5.6 or pressures[0]<35:
                             self._osmo_state_variable=0
                             self.ui.sv2_button.setChecked(False)
                             self.ui.status_label.setText("Pressurizing")
                     elif self._osmo_state_variable==4:
                         self._osmo_state_variable=5
+                        self.wait_signal.emit(5)
+                        self.ui.sv1_button.setChecked(False)
                         self.ui.bv5_button.setChecked(False)
+                        self.ui.status_label.setText("Clearing")
                         self._overflow_counter = 0
                     else:
                         self.ui.sv1_button.setChecked(False)
+                        self.ui.bv5_button.setChecked(False)
                         self.ui.sv2_button.setChecked(False)
                         self._filling_osmo=False
                         self._automated=False                      
@@ -696,16 +731,16 @@ class PipesWidget(QtWidgets.QWidget):
                         self._overflow_counter = 0
                         self.enable_all()
                         self.ui.stop_button.setEnabled(False)
-                        self.ui.status_label.setText("... Done!")
+                        self.ui.status_label.setText("... Finished RO Filling")
+                        self._logger.insert_text("TUBEFULL\n")
+                        self.refill_complete.emit()
                         if self._auto_refill_enabled:
-                            self.refill_complete.emit()
-                            self._logger.insert_text("TUBEFULL\n")
                             self.refill_timer.start(self._refill_timeout*60*1000) 
 
                 if overflow:
                     self._overflow_counter+=1
 
-                    if self._overflow_counter>5:
+                    if self._overflow_counter>3:
                        
                         self.ui.bv6_button.setChecked(False)
                         self.ui.sv3_button.setChecked(False)
@@ -714,17 +749,23 @@ class PipesWidget(QtWidgets.QWidget):
                         self.ui.bv1_button.setChecked(False)
                         self.ui.bv4_button.setChecked(False)
 
-                        if self._filling_osmo:
-                            self.ui.sv2_button.setChecked(True)
-                            self.ui.sv1_button.setChecked(True)
-                            self.ui.bv5_button.setChecked(True)
-                            self._overflow_conter = 0
-                            self._osmo_state_variable=4
+                        if self._osmo_state_variable>0:
+                            self._logger.insert_text("Clearing Osmosis Pressure")
+                            self.ui.status_label.setText("Cleaning up osmosis")
+                            self._bleed_osmo()
+                            #self.ui.sv2_button.setChecked(True)
+                            #self.ui.sv1_button.setChecked(False)
+                            #self.ui.bv5_button.setChecked(True)
+                            self._osmo_state_variable = 0
+                            self.refill_complete.emit()
+                            self._logger.insert_text("TUBEFULL\n")
+                            if self._auto_refill_enabled:
+                                self.refill_timer.start(self._refill_timeout*60*1000) 
+
                         else:
                             self.ui.bv5_button.setChecked(False)
                             self.ui.sv2_button.setChecked(False)
-                            self.ui.sv1_button.setChecked(False)
-    
+                            self.ui.sv1_button.setChecked(False) 
                             self._filling_filter = False 
                             self._filling_tank = False
                             self._filling_osmo = False 
@@ -733,9 +774,9 @@ class PipesWidget(QtWidgets.QWidget):
                             self.enable_all()
                             self.ui.stop_button.setEnabled(False)
                             self.ui.status_label.setText("... Done!")
+                            self.refill_complete.emit()
+                            self._logger.insert_text("TUBEFULL\n")
                             if self._auto_refill_enabled:
-                                self.refill_complete.emit()
-                                self._logger.insert_text("TUBEFULL\n")
                                 self.refill_timer.start(self._refill_timeout*60*1000) 
                 else:
                     self._overflow_counter = 0
