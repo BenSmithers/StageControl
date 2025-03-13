@@ -1,7 +1,6 @@
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QTimer
 
-from StageControl.picocode.read_pico import main
-
+from StageControl.picocode.read_pico import PicoMeasure
 class DAQWorker(QObject):
 
     """
@@ -27,6 +26,8 @@ class DAQWorker(QObject):
         self._timer = QTimer()
         self._timer.timeout.connect(self.measure)
 
+
+        self._pico = PicoMeasure()
         
         """
             0 - don't refill
@@ -49,8 +50,6 @@ class DAQWorker(QObject):
 
         if self._is_striping:
             self.change_wavelength.emit(self._last_wave )
-        else:
-            self.measure()
         self.message_signal.emit("Starting run")
                 
 
@@ -74,20 +73,21 @@ class DAQWorker(QObject):
         """
         if self._running:
             try:
-                trig, mon, rec = main()
+                trig, mon, rec = self._pico.measure()
             except Exception as e:
-                self.message_signal.emit(e)
+                self.message_signal.emit(str(e))
                 trig = 0
                 mon = 0
                 rec = 0
 
-            if self._is_striping:
+            if self._is_striping and self._running:
                 self.data_recieved.emit(self._last_wave, trig, mon, rec)
                 self._last_wave+=1 
                 self._last_wave = ((self._last_wave-1) % self.MAX_WAVE)+1
                 self.change_wavelength.emit(self._last_wave )
             else:
                 self.data_recieved.emit(-1, trig, mon, rec)
-                self._timer.start(30) # take a 30 second break
+                #self._timer.start(15) # take a 30 second break
         else:
-            self._timer.stop()
+            self._running = False 
+
