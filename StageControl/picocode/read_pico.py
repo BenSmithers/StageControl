@@ -160,14 +160,42 @@ class PicoMeasure:
                                                             ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'])
         assert_pico_ok(self.status["setDataBuffersD"])
 
+        self.sampleInterval = ctypes.c_int32(8)
 
-    
+        chana, chanb, chand = self.measure(True)
+        
+        self.bped = np.mean(chanb)
+        self.dped = np.mean(chand)
 
-    def measure(self):
+    def calibrate(self):
+        """
+            Get trigger times.
+            Then chop up waveforms. 
+            Sum over each waveform, minus the pedestal
+            Make distribution. Run fit. 
+            Get threshold
+        """
+        trigger, chanb, chand = self.measure(True)
+        time_sample = np.linspace(0, (self.totalSamples - 1) * self.sampleIntervalNs, self.totalSamples)
+        
+        # we drop this down to just a difference in the sign (-2, 0, +2)
+        # but shifted down by the threshold 
+        # so +2 is crossing up, -2 is crossing down, 0 is staying above/below 
+        crossings = np.diff(np.sign(trigger - 2000))
+        #  call the crossing-down ones nothing
+        crossings[crossings<0] = 0
+        # and get the places where we are crossing up. hit times! 
+        crossings = np.where(crossings)
+        ctime = time_sample[crossings[0]]
 
+
+    def measure(self, give_waves = False):
+        self.bufferAMax*=0
+        self.bufferBMax*=0
+        self.bufferDMax*=0
 
         # Begin streaming mode:
-        sampleInterval = ctypes.c_int32(8)
+        
         sampleUnits = ps.PS3000A_TIME_UNITS['PS3000A_NS']
         # We are not triggering:
         maxPreTriggerSamples = 0
@@ -190,7 +218,7 @@ class PicoMeasure:
             # need to set a lot of this up between calls 
             start = time.time()
             self.status["runStreaming"] = ps.ps3000aRunStreaming(self.chandle,
-                                                            ctypes.byref(sampleInterval),
+                                                            ctypes.byref(self.sampleInterval),
                                                             sampleUnits,
                                                             maxPreTriggerSamples,
                                                             self.totalSamples,
@@ -200,8 +228,8 @@ class PicoMeasure:
                                                             self.sizeOfOneBuffer)
             assert_pico_ok(self.status["runStreaming"])
 
-            actualSampleInterval = sampleInterval.value
-            actualSampleIntervalNs = actualSampleInterval *1
+            self.actualSampleInterval = self.sampleInterval.value
+            self.actualSampleIntervalNs = self.actualSampleInterval *1
 
 
             self.nextSample = 0
@@ -242,16 +270,25 @@ class PicoMeasure:
 
             # Convert ADC counts data to mV
             conv_t = time.time()
-            adc2mVChAMax = adc2mV(self.bufferCompleteA, self.channel_range, maxADC)
-            adc2mVChBMax = adc2mV(self.bufferCompleteB, self.ch_range_2, maxADC) -bped
-            adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_2, maxADC)-dped
+            if give_waves:
+                adc2mVChAMax = adc2mV(self.bufferCompleteA, self.channel_range, maxADC)
+                adc2mVChBMax = adc2mV(self.bufferCompleteB, self.ch_range_2, maxADC)
+                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_2, maxADC)
+                return adc2mVChAMax, adc2mVChBMax, adc2mVChDMax
+
+            else:
+                adc2mVChAMax = adc2mV(self.bufferCompleteA, self.channel_range, maxADC)
+                adc2mVChBMax = adc2mV(self.bufferCompleteB, self.ch_range_2, maxADC) - self.bped
+                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_2, maxADC)-self.dped
+
+
 
         #    adc2mVChAMax = self.bufferCompleteA
         #    adc2mVChBMax = self.bufferCompleteB
         #    adc2mVChDMax = self.bufferCompleteD
             conv_t_end = time.time()
             # Create time data
-            time_sample = np.linspace(0, (self.totalSamples - 1) * actualSampleIntervalNs, self.totalSamples)
+            time_sample = np.linspace(0, (self.totalSamples - 1) * self.actualSampleIntervalNs, self.totalSamples)
             
             # we drop this down to just a difference in the sign (-2, 0, +2)
             # but shifted down by the threshold 
