@@ -120,10 +120,16 @@ class main_window(QMainWindow):
 
         self.ui.pipes.refill_complete.connect(self.ui.plot_widg.update_filltime)
 
-        self.setWindowTitle("WCTE Water Control System")
-        self.ui.filepathEdit.setText("/home/watermon/software/PicoCode/data/{}".format(self.ui.control_widget._write_to))
-        self.ui.filepathEdit.doubleClicked.connect(self.declick)
+        self.setWindowTitle("WMS Control System")
+        self.ui.filepathEdit.setText(self.ui.plot_widg._filepath)
+        self.ui.refEdit.setText(self.ui.plot_widg._reference_file)
+
+        #self.ui.filepathEdit.doubleClicked.connect(self.declick)
         self.ui.filepathEdit.clicked.connect(self.declick)
+        self.ui.refEdit.clicked.connect(self.refclick)
+        
+
+        self.ui.refEdit.setText("")
         
     def init_daq(self):
         try:
@@ -264,6 +270,13 @@ class main_window(QMainWindow):
             if pathto!="":
                 self.ui.filepathEdit.setText(pathto)
                 self.ui.plot_widg.update_filepath(pathto)
+    def refclick(self):
+        pathto = QFileDialog.getOpenFileName(None, 'Open File',"/home/watermon/software/StageControl/StageControl/gui/picodat/", 'dat (*.dat)')[0]
+        if pathto is not None:
+            if pathto!="":
+                self.ui.refEdit.setText(pathto)
+                self.ui.plot_widg.update_reference(pathto)
+    
 
     def keyPressEvent(self, e):
         if e.key()==Qt.EnterKeyType.EnterKeyReturn or e.key()==16777220:

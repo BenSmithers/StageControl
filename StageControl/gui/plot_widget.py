@@ -33,6 +33,7 @@ class PlotsWidget(QtWidgets.QWidget):
 
 #        self._filepath = "/home/watermon/software/PicoCode/ratio_data_live.csv"
         self._filepath = "/home/watermon/software/StageControl/StageControl/gui/picodat/picodat_run23_Return Untreated_various_variousadc_mHz.dat"
+        self._reference_file = "/home/watermon/software/StageControl/StageControl/gui/picodat/picodat_run37_Supply Untreated_various_variousadc_mHz.dat"
         self._warned=False
         self._oldname=self._filepath 
 
@@ -55,13 +56,15 @@ class PlotsWidget(QtWidgets.QWidget):
 
         self._ref_data = {}
         self._filltime = -1
-        self._reference_file = "/home/watermon/software/StageControl/StageControl/gui/picodat/picodat_run24_Return Untreated_various_variousadc_mHz.dat"
-        self.update_reference()
+        
+
+        self.update_reference(self._reference_file)
 
         self.update_plots()
 
-    def update_reference(self):
-        if os.path.exists(self._reference_file):
+    def update_reference(self, newname):
+        if os.path.exists(newname):
+            self._reference_file = newname
             self._ref_data =  build_bounds(self._reference_file)
     
     @pyqtSlot()
