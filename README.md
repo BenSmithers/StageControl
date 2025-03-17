@@ -5,6 +5,20 @@ If there is no terminal open, press `Ctrl+Alt+T` to launch one.
 Then, execute the `launch.sh` bash script. 
 This will start the water quality monitoring GUI. 
 
+## Shift Checks:
+
+Once an hour, press "Take Pictures" on the camera control tab. 
+This should take a few minutes, but you will ultimately see a picture along the length of the WMS along with a fully dark picture that isn't updating (that's okay). 
+Check that there is no water. 
+
+## If you see water
+
+1. Immediately go to the "pump operations" tab and press the button on the top-left "Drain Chamber".
+2. Notify Ben Smithers [by email](mailto:bsmithers@triumf.ca), slack @bsmithers, and/or by CERN Phone no 69399. 
+3. Once it is safe to do so, go to the WMS and clean up the spilled water. You may need to move the desy table left (using the LEFT red button) about 10cm. 
+4. Under "Control" press "Stop Run" 
+5. Once the chamber is drained 
+
 ## Starting Your Shift
 
 On the `control` tab, verify that the emails are correct for the two people currently on shift. 
