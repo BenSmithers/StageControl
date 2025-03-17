@@ -10,8 +10,9 @@ from picosdk.functions import adc2mV, assert_pico_ok
 import time
 from scipy.signal import find_peaks
 from StageControl.picocode.utils import get_valid
+import json 
 
-thresh = 5.0
+thresh = 6.0
 bped = -0.55
 dped = -1.0
 
@@ -32,6 +33,9 @@ class PicoMeasure:
         self.wasCalledBack = False
 
         self.collection_time = 30
+
+        self.rec_lt_good = (140-113)/376
+        self.mon_lt_good = (40-14)/376
 
 
         # Create self.chandle and self.status ready for use
@@ -161,11 +165,13 @@ class PicoMeasure:
         assert_pico_ok(self.status["setDataBuffersD"])
 
         self.sampleInterval = ctypes.c_int32(8)
-
+        self._initialized = False
+    def initialze(self):
         chana, chanb, chand = self.measure(True)
         
         self.bped = np.mean(chanb)
         self.dped = np.mean(chand)
+        self._initialized = True
 
     def calibrate(self):
         """
@@ -176,8 +182,11 @@ class PicoMeasure:
             Get threshold
         """
         trigger, chanb, chand = self.measure(True)
-        time_sample = np.linspace(0, (self.totalSamples - 1) * self.sampleIntervalNs, self.totalSamples)
-        
+        #time_sample = np.linspace(0, (self.totalSamples - 1) * self.sampleIntervalNs, self.totalSamples)
+        bins = np.linspace(0, 100, 128)
+
+        time_sample = np.linspace(0, (self.totalSamples - 1) * self.actualSampleIntervalNs, self.totalSamples)
+            
         # we drop this down to just a difference in the sign (-2, 0, +2)
         # but shifted down by the threshold 
         # so +2 is crossing up, -2 is crossing down, 0 is staying above/below 
@@ -185,11 +194,32 @@ class PicoMeasure:
         #  call the crossing-down ones nothing
         crossings[crossings<0] = 0
         # and get the places where we are crossing up. hit times! 
-        crossings = np.where(crossings)
-        ctime = time_sample[crossings[0]]
+        crossings = np.where(crossings)[0]
+
+        mon_peaks = []
+        rec_peaks = []
+        for ic in crossings:
+            mon_peaks.append(-1*np.min(chanb[ic:ic+70]))
+            rec_peaks.append(-1*np.min(chand[ic:ic+70]))
+
+        mon_data = np.histogram(mon_peaks, bins)[0]
+        rec_data = np.histogram(rec_peaks, bins)[0]
+
+        out_data = {
+            "bins" : bins.tolist(),
+            "monitor":mon_data.tolist(),
+            "rec":rec_data.tolist()
+        }
+        _obj = open(os.path.join(os.path.dirname(__file__), "charge.json"), 'wt')
+        json.dump(out_data, _obj,indent=4)
+        _obj.close()
+
 
 
     def measure(self, give_waves = False):
+        if (not self._initialized) and not give_waves:
+            self.initialze()
+
         self.bufferAMax*=0
         self.bufferBMax*=0
         self.bufferDMax*=0
@@ -213,6 +243,8 @@ class PicoMeasure:
         t_total = 0
         mon_total = 0
         rec_total = 0
+        mon_dark = 0
+        rec_dark = 0
 
         while True:
             # need to set a lot of this up between calls 
@@ -299,7 +331,6 @@ class PicoMeasure:
             # and get the places where we are crossing up. hit times! 
             crossings = np.where(crossings)
             ctime = time_sample[crossings[0]]
-
             ntrig = len(ctime)
 
             # repeat for all channels  
@@ -307,23 +338,25 @@ class PicoMeasure:
             crossings[crossings>0]=0
             crossings = np.where(crossings)
 
-            rectime = time_sample[crossings[0]]
-            is_good = get_valid(ctime, rectime, False).astype(int)
-            
+            montime = time_sample[crossings[0]]
+            is_good, is_bad = get_valid(ctime, montime, False)
             nmon = np.sum(is_good)
+            mon_bad = np.sum(is_bad)*self.mon_lt_good/(1-self.mon_lt_good)
         
             crossings = np.diff(np.sign(-adc2mVChDMax - thresh))
             crossings[crossings>0]=0
             crossings = np.where(crossings)
 
-            montime = time_sample[crossings[0]]
-            is_good = get_valid(ctime, montime, True).astype(int)
-            
+            rectime = time_sample[crossings[0]]
+            is_good, is_bad = get_valid(ctime, rectime, True)
             nrec = np.sum(is_good)
+            rec_bad = np.sum(is_bad)*self.rec_lt_good/(1-self.rec_lt_good)
 
             t_total += ntrig
-            mon_total +=nmon
-            rec_total +=nrec
+            mon_total +=nmon 
+            rec_total +=nrec 
+            mon_dark += mon_bad 
+            rec_dark += rec_bad
 
             if False: #np.abs( 1- (nmon/nrec)/(np.array(mon_total)/np.array(rec_total)))>0.2:
                 print("SPIKE")
@@ -348,5 +381,5 @@ class PicoMeasure:
             if (time.time() - collection_start)>self.collection_time:
                 break
                 
-        return t_total, mon_total, rec_total
+        return t_total, mon_total, rec_total, int(mon_bad), int(rec_bad)
 

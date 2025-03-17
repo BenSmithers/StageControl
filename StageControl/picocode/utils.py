@@ -46,7 +46,8 @@ def get_valid(trigs, hits, is_rec):
 
             hit_index+=1
     
-    return is_valid
+
+    return is_valid, np.logical_not(is_valid)
 
 
 class ReturnType(Enum):

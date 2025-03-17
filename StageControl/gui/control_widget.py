@@ -39,6 +39,7 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.test_email.clicked.connect(self.test_email)
         self.ui.start_data_but.clicked.connect(self.run_button)
         self.ui.auto_refill.clicked.connect(self.auto_refill_toggle)
+        
         self.start_mode = True 
 
         self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
@@ -53,7 +54,7 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_locations[1] = 7.57
         self._adcs= [
                 720,
-                840,
+                830,
                 768,
                 640,
                 793,
@@ -268,14 +269,18 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.positionSpin.setValue(position)
         self.move_signal.emit(position)
 
-    @pyqtSlot(int, int, int, int)
-    def write_data(self, wavelen, trig, mon, rec):
+    @pyqtSlot(int, int, int, int, int, int)
+    def write_data(self, wavelen, trig, mon, rec, mon_dark, rec_dark):
+        write_header = not os.path.exists(self._write_to)
+        
         _obj = open(self._write_to, 'at')
+        if write_header:
+            _obj.write("#Time, trig, monitor, receiver, monitor_dark, receiver_dark, ADC, wave length\n")
         
         if self.ui.rotate_wave.isChecked():            
-            _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, mon, rec, self.ui.adc_spin.value(), wavelen, ))
+            _obj.write("{}, {},{},{}, {}, {}, {}, {}\n".format(time(), trig, mon, rec,mon_dark,rec_dark, self.ui.adc_spin.value(), wavelen, ))
         else:
-            _obj.write("{}, {}, {}, {}, {}, {}\n".format(time(), trig, mon, rec, self.ui.adc_spin.value(), self.ui.waveCombo.currentIndex()))
+            _obj.write("{}, {},{},{}, {}, {}, {}, {}\n".format(time(), trig, mon, rec,mon_dark, rec_dark, self.ui.adc_spin.value(), self.ui.waveCombo.currentIndex()))
         _obj.close()
     
     @pyqtSlot()
