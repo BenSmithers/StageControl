@@ -65,6 +65,7 @@ class USBWorker(QObject):
     @pyqtSlot()
     def disable_board(self):
         self._board.disable()
+        self.led_changed_signal.emit()
         #self.StatusSignal.emit("LED - L0\n")
         #self.StatusSignal.emit("LED - D\n")
 

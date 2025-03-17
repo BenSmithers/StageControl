@@ -9,6 +9,7 @@ import os
 from scipy import stats 
 import json
 import time 
+from datetime import datetime
 from plotgui import Ui_Form as gui 
 
 from StageControl.water.utils import build_bounds, get_fill_times
@@ -37,6 +38,8 @@ class PlotsWidget(QtWidgets.QWidget):
         self._warned=False
         self._oldname=self._filepath 
 
+        self._mintime = datetime(1980,1, 1, 1, 1)
+
         if False:
             self.ui.monitorBox.setChecked(True)
             self.ui.receiverBox.setChecked(True)
@@ -63,6 +66,7 @@ class PlotsWidget(QtWidgets.QWidget):
         self.update_plots()
 
     def update_reference(self, newname):
+        self._mintime = datetime(1980,1, 1, 1, 1)
         if os.path.exists(newname):
             self._reference_file = newname
             self._ref_data =  build_bounds(self._reference_file)
@@ -72,6 +76,7 @@ class PlotsWidget(QtWidgets.QWidget):
         self._filltime = -1
 
     def update_filepath(self, path):
+        self._mintime = datetime(1980,1, 1, 1, 1)
         self._filepath = path
         self._filltime = -1
         self.update_plots()
@@ -101,50 +106,49 @@ class PlotsWidget(QtWidgets.QWidget):
         self.axes = self.ui.figure.add_subplot(111)
 
         data = np.loadtxt(self._filepath, delimiter=",").T 
-        
+        if len(data)<7:
+            print("Old unsupported data")
+            return 
         
         trigger_data = data[1]
         tmask = trigger_data>0
-        receiver_data = -1*np.log(1 - data[2][tmask]/trigger_data[tmask])
-        monitor_data = -1*np.log(1- data[3][tmask]/trigger_data[tmask])
-    
-        if self._filltime==-1:
-            self._filltime = get_fill_times(data[0]) # the _last_ fill time    
+        receiver_data = -1*np.log(1 - (data[3][tmask]-data[5][tmask])/trigger_data[tmask])
+        monitor_data = -1*np.log(1- (data[2][tmask]-data[4][tmask])/trigger_data[tmask])
+
 
         
-            if len(self._filltime)==0:
-                self._filltime = data[0][0]
-            else:
-                self._filltime =self._filltime[-1]
 
-        fill_mask = data[0][tmask]>=self._filltime
+        dt_time =  np.array([datetime.fromtimestamp(entry) for entry in data[0][tmask]])
+        
+        # okay now we need a new one...
+        self._mintime = datetime(dt_time[-1].year, dt_time[-1].month, dt_time[-1].day, dt_time[-1].hour-2)
 
-        ratio = (monitor_data/receiver_data)[fill_mask]
-        times = (data[0][tmask][fill_mask] - self._filltime)/3600
+        fill_mask = data[0][tmask] > int(self._mintime.timestamp())
 
-        if len(times)==0:
-            print("No valid fills found - this is likely older data")
-            return 
-        waveno =  data[5][tmask][fill_mask]
+        ratio = (receiver_data/monitor_data)[fill_mask]
+
+        waveno =  data[7][tmask][fill_mask]
         
         for _i in range(len(self._ref_data["mean"])):
             i = _i+1
+            break
             self.axes.fill_between(self._ref_data["times"], 
                              self._ref_data["mean"][i]- self._ref_data["std"][i],
                              self._ref_data["mean"][i]+self._ref_data["std"][i],
                              color=get_color(i+1, 8, 'nipy_spectral_r'),label="{} nm".format(wavelens[i]), alpha=0.5, zorder=i)
         
         
+
         for _i in range(5):
             i = _i+1
-
             wavemask = waveno==i 
-            self.axes.plot(times[wavemask], ratio[wavemask], color=get_color(i+1, 8, 'nipy_spectral_r'), zorder=10+i, marker='d', ls='')
+            
+            self.axes.plot(dt_time[fill_mask][wavemask], ratio[wavemask], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), zorder=10+i, marker='d', ls='')
 
         self.axes.set_ylim([0, 0.3])
-        self.axes.set_xlim([0, 1.4])
-        self.axes.set_xlabel("Hours Since Tube Full", size=14)
+        self.axes.set_xlim([self._mintime, datetime(self._mintime.year, self._mintime.month, self._mintime.day, self._mintime.hour+4)])
+        self.axes.set_xlabel("Time Stamp", size=14)
         self.axes.set_ylabel(r"Mean $\mu$ Ratio", size=14)
         self.axes.legend()
-
+        self.ui.figure.autofmt_xdate()
         self.ui.canvas.draw()

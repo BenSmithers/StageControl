@@ -381,5 +381,5 @@ class PicoMeasure:
             if (time.time() - collection_start)>self.collection_time:
                 break
                 
-        return t_total, mon_total, rec_total, int(mon_bad), int(rec_bad)
+        return t_total, mon_total, rec_total, int(mon_dark), int(rec_dark)
 
