@@ -32,9 +32,9 @@ class USBWorker(QObject):
 
     @pyqtSlot()
     def initialize(self):
-        self._conn = ELLxConnection(self._stage_path, fake=fake)
+        self._conn = ELLxConnection(self._stage_path, fake=self._fake)
         self._conn.go_home()
-        self._board = LEDBoard(self._led_path, fake=fake)
+        self._board = LEDBoard(self._led_path, fake=self._fake)
         self._board.enable()
         self._board.set_int_trigger()
         self._board.set_fast_rate()
@@ -93,8 +93,10 @@ class main_window(QMainWindow):
     killConnection = pyqtSignal()
 
     reinitialize = pyqtSignal()
-    def __init__(self,parent=None, fake=False):
+    def __init__(self,parent=None, fake=False, nopico = False):
         QWidget.__init__(self, parent)
+
+        self._nopico = nopico
 
         self.ui = gui()
         self.ui.setupUi(self, fake=fake)
@@ -133,7 +135,7 @@ class main_window(QMainWindow):
         
     def init_daq(self):
         try:
-            self.daq_worker = DAQWorker()
+            self.daq_worker = DAQWorker(self._nopico)
             self.daq_worker.moveToThread(self.daq_threadman)
             self.daq_worker.data_recieved.connect(self.ui.control_widget.write_data)
             self.daq_worker.data_recieved.connect(self.ui.plot_widg.plot_wrap)
@@ -145,7 +147,9 @@ class main_window(QMainWindow):
             self.ui.control_widget.done_signal.connect(self.daq_worker.measure)
             self.ui.control_widget.start_signal.connect(self.daq_worker.start_data_taking)
             self.ui.control_widget.stop_signal.connect(self.daq_worker.stop_data_taking)
+            self.ui.control_widget.ui.gain_button.clicked.connect(self.daq_worker.gain_run)
             
+            self.daq_worker.initialize()
             
         except Exception as e:
             self.dialog = WarnWidget(parent=self, message="Critical Error {}".format(e))
@@ -294,14 +298,26 @@ class main_window(QMainWindow):
         self.ui.control_widget.insert_text(message)
 
 
-import sys 
-fake = False
-if len(sys.argv)>1:
-    fake = sys.argv[1]=="fake"
+
+
+from argparse import ArgumentParser
+parser = ArgumentParser()
+parser.add_argument("--nousb", default=False, action="store_true",
+                help="Use fake data without USB connections?")
+parser.add_argument("--nopico", default=False, action="store_true",
+                help="Do not connect to PicoScope (FOR DEBUG)")
+options = parser.parse_args()
+
 app = QApplication(sys.argv)
-app_instance = main_window(fake=fake)
+
+print("Running {} USB Connections".format("without" if options.nousb else "with"))
+print("Running {} Picoscope".format("without" if options.nopico else "with"))
+app_instance = main_window(fake=options.nousb, nopico=options.nopico)
 
 if __name__=="__main__":
+
+
+
     # make sure the base saves folder exists 
     app_instance.show()
     sys.exit(app.exec_())
