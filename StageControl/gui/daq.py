@@ -40,10 +40,10 @@ class DAQWorker(QObject):
         """
         self._refill_kind = 0 
         
-        self._last_wave = 1
+        self._last_wave = 6
         self._is_striping = False
         self._running = False
-
+    
     def initialize(self):
         if self._nopico:
             self.message_signal.emit("IN DEBUG MODE!")
@@ -60,7 +60,7 @@ class DAQWorker(QObject):
     @pyqtSlot(bool)
     def start_data_taking(self, is_striping:bool):
         self._is_striping = is_striping
-        self._last_wave = 1 
+        self._last_wave = 6
         self._running = True 
 
         if self._is_striping:
@@ -75,7 +75,7 @@ class DAQWorker(QObject):
             So we do that and reset these variables
         """
         self._timer.stop()
-        self._last_wave = 1
+        self._last_wave = 6
         self._is_striping = False
         self._running = False
         self.message_signal.emit("Stopping run")
@@ -97,7 +97,7 @@ class DAQWorker(QObject):
 
             if self._is_striping and self._running:
                 self.data_recieved.emit(self._last_wave, trig, mon, rec, mon_dark, rec_dark)
-                self._last_wave+=1 
+                self._last_wave-=1 
                 self._last_wave = ((self._last_wave-1) % self.MAX_WAVE)+1
                 self.change_wavelength.emit(self._last_wave )
             else:

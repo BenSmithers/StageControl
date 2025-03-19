@@ -121,7 +121,7 @@ class PlotsWidget(QtWidgets.QWidget):
         dt_time =  np.array([datetime.fromtimestamp(entry) for entry in data[0][tmask]])
         
         # okay now we need a new one...
-        self._mintime = datetime(dt_time[-1].year, dt_time[-1].month, dt_time[-1].day, dt_time[-1].hour-2)
+        self._mintime = datetime(dt_time[-1].year, dt_time[-1].month, dt_time[-1].day, (dt_time[-1].hour-2) % 24)
 
         fill_mask = data[0][tmask] > int(self._mintime.timestamp())
 
@@ -145,8 +145,10 @@ class PlotsWidget(QtWidgets.QWidget):
             
             self.axes.plot(dt_time[fill_mask][wavemask], ratio[wavemask], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), zorder=10+i, marker='d', ls='')
 
-        self.axes.set_ylim([0, 0.3])
-        self.axes.set_xlim([self._mintime, datetime(self._mintime.year, self._mintime.month, self._mintime.day, self._mintime.hour+4)])
+        #self.axes.set_ylim([0, 1.0])
+        dayshift = int(self._mintime.hour+4 >23)
+        
+        self.axes.set_xlim([self._mintime, datetime(self._mintime.year, self._mintime.month, self._mintime.day+dayshift, (self._mintime.hour+4) % 24)])
         self.axes.set_xlabel("Time Stamp", size=14)
         self.axes.set_ylabel(r"Mean $\mu$ Ratio", size=14)
         self.axes.legend()

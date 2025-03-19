@@ -20,16 +20,33 @@ chARange = 5
 nbuf = 10
 channelInputRanges = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000]
 
-def get_valid(trigs, hits, is_rec):
-    if is_rec:
-        min_time = 113
-        max_time = 140
+def get_cfd_time(times, signal, threshold, auto_adjust_ped = False, use_rise=False):
+    if auto_adjust_ped:
+        ped = np.mean( signal[np.abs(signal)<0.66*threshold] )
     else:
-        min_time = 14
-        max_time = 40
+        ped = 0
+    crossings = np.diff(np.sign((signal-ped) - threshold))
+    if use_rise:
+        crossings[crossings<0] = 0    
+    else:
+        crossings[crossings>0] = 0
+    
+    crossings = np.where(crossings)
+    x0 = times[crossings[0]]
+    return x0, x0
 
-    is_valid = np.zeros_like(hits)
-    is_valid = is_valid.astype(bool)
+    y0 = signal[crossings[0]]
+    y1 = signal[crossings[0]+1]
+    slope = (y1-y0)/8
+    b = y0 - slope*x0 
+    return (threshold - b)/slope, (threshold - b)/slope -x0
+
+
+def get_rtime(trigs, hits):
+    min_time = 0
+    max_time = 346
+
+    tdiffs = []
 
     hit_index = 0
     for i in range(len(trigs)):
@@ -38,13 +55,41 @@ def get_valid(trigs, hits, is_rec):
             # now the hit_index is the hit just after the trig we're on
             dif = hits[hit_index] - trigs[i]
             if dif>min_time and dif<max_time:
-                is_valid[hit_index] = True
-                hit_index +=1
-                break
-            else:
-                is_valid[hit_index] = False #or is_valid[hit_index]
+                tdiffs.append(dif)                
 
             hit_index+=1
+
+    return tdiffs 
+
+def get_valid(trigs, hits, is_rec):
+    window = 24+1
+    if is_rec:
+        min_time = 104
+        max_time = min_time+window
+    else:
+        min_time = 8
+        max_time = min_time+window
+
+
+    is_valid = np.zeros_like(hits)
+    is_valid = is_valid.astype(bool)    
+    hit_index = 0
+    for i in range(len(trigs)):
+        while hits[hit_index]<=(trigs[i]+max_time):
+
+            # now the hit_index is the hit just after the trig we're on
+            dif = hits[hit_index] - trigs[i]
+            if dif>=min_time and dif<=max_time:
+                is_valid[hit_index] = True
+                hit_index +=1
+            else:
+                is_valid[hit_index] = False or is_valid[hit_index]
+
+            hit_index+=1
+            if hit_index>=(len(hits)-1):
+                break
+        if hit_index>=(len(hits)-1):
+            break
     
 
     return is_valid, np.logical_not(is_valid)

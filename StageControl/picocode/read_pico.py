@@ -6,13 +6,13 @@ import numpy as np
 import h5py as h5 
 from picosdk.ps3000a import ps3000a as ps
 import matplotlib.pyplot as plt
-from picosdk.functions import adc2mV, assert_pico_ok
+from picosdk.functions import adc2mV, assert_pico_ok, PICO_STATUS_LOOKUP
 import time
 from scipy.signal import find_peaks
-from StageControl.picocode.utils import get_valid
+from StageControl.picocode.utils import get_valid, get_cfd_time
 import json 
 
-thresh = 6.0
+thresh = 10
 bped = -0.55
 dped = -1.0
 
@@ -31,16 +31,30 @@ class PicoMeasure:
         self.nextSample = 0
         self.autoStopOuter = False
         self.wasCalledBack = False
+        self._initialized = False
 
         self.collection_time = 30
 
-        self.rec_lt_good = (140-113)/376
-        self.mon_lt_good = (40-14)/376
+        self.rec_lt_good = 40./376
+        self.mon_lt_good = 40./376
 
 
         # Create self.chandle and self.status ready for use
         self.chandle = ctypes.c_int16()
         self.status = {}
+        self._good = False 
+        while False: #not self._good:
+            self.start()
+            self.collection_time = 5
+            self.initialze() 
+            if not self._good:
+                self.close()
+        self.start()
+        self.initialze() 
+        self.collection_time = 30
+
+
+    def start(self):
 
         # Open PicoScope 5000 Series device
         self.status["openunit"] = ps.ps3000aOpenUnit(ctypes.byref(self.chandle), None)
@@ -51,6 +65,7 @@ class PicoMeasure:
 
             powerStatus = self.status["openunit"]
 
+            # try powering it up in a few ways. AC adapter or USB 
             if powerStatus == 286:
                 self.status["changePowerSource"] = ps.ps3000aChangePowerSource(self.chandle, powerStatus)
             elif powerStatus == 282:
@@ -109,9 +124,9 @@ class PicoMeasure:
         # Size of capture
         # we want a lot of these. The more the better. Eventually reached diminishing returns 
         self.sizeOfOneBuffer = 500 # 0000
-        self.sizeOfOneBuffer *= 10000
+        self.sizeOfOneBuffer *= 100000
 
-        numBuffersToCapture = 10
+        numBuffersToCapture = 1
 
         self.totalSamples = self.sizeOfOneBuffer * numBuffersToCapture
 
@@ -165,13 +180,28 @@ class PicoMeasure:
         assert_pico_ok(self.status["setDataBuffersD"])
 
         self.sampleInterval = ctypes.c_int32(8)
-        self._initialized = False
+        
+
     def initialze(self):
         chana, chanb, chand = self.measure(True)
-        
+        bad = np.min(chana)>=0
+        self._good = not bad 
+        print("{} noise".format("Bad" if bad else "Good"))
         self.bped = np.mean(chanb)
         self.dped = np.mean(chand)
-        self._initialized = True
+        self._initialized = True # and (self._good)
+    
+    def close(self):
+                
+        # Stop the scope
+        # handle = chandle
+        self.status["stop"] = ps.ps3000aStop(self.chandle)
+        assert_pico_ok(self.status["stop"])
+
+        # Disconnect the scope
+        # handle = chandle
+        self.status["close"] = ps.ps3000aCloseUnit(self.chandle)
+        assert_pico_ok(self.status["close"])
 
     def calibrate(self):
         """
@@ -182,6 +212,7 @@ class PicoMeasure:
             Get threshold
         """
         trigger, chanb, chand = self.measure(True)
+        bad = np.min(trigger)<0
         #time_sample = np.linspace(0, (self.totalSamples - 1) * self.sampleIntervalNs, self.totalSamples)
         bins = np.linspace(0, 100, 128)
 
@@ -210,6 +241,7 @@ class PicoMeasure:
             "monitor":mon_data.tolist(),
             "rec":rec_data.tolist()
         }
+        return out_data
         _obj = open(os.path.join(os.path.dirname(__file__), "charge.json"), 'wt')
         json.dump(out_data, _obj,indent=4)
         _obj.close()
@@ -259,6 +291,7 @@ class PicoMeasure:
                                                             ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'],
                                                             self.sizeOfOneBuffer)
             assert_pico_ok(self.status["runStreaming"])
+            time.sleep(5)
 
             self.actualSampleInterval = self.sampleInterval.value
             self.actualSampleIntervalNs = self.actualSampleInterval *1
@@ -291,7 +324,7 @@ class PicoMeasure:
                     # If we weren't called back by the driver, this means no data is ready. Sleep for a short while before trying
                     # again.
                     time.sleep(0.01)
-
+            assert_pico_ok(self.status["getStreamingLastestValues"])
 
             # Find maximum ADC count value
             # handle = self.chandle
@@ -311,7 +344,7 @@ class PicoMeasure:
             else:
                 adc2mVChAMax = adc2mV(self.bufferCompleteA, self.channel_range, maxADC)
                 adc2mVChBMax = adc2mV(self.bufferCompleteB, self.ch_range_2, maxADC) - self.bped
-                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_2, maxADC)-self.dped
+                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_2, maxADC) - self.dped
 
 
 
@@ -321,35 +354,19 @@ class PicoMeasure:
             conv_t_end = time.time()
             # Create time data
             time_sample = np.linspace(0, (self.totalSamples - 1) * self.actualSampleIntervalNs, self.totalSamples)
-            
-            # we drop this down to just a difference in the sign (-2, 0, +2)
-            # but shifted down by the threshold 
-            # so +2 is crossing up, -2 is crossing down, 0 is staying above/below 
-            crossings = np.diff(np.sign(adc2mVChAMax - 2000))
-            #  call the crossing-down ones nothing
-            crossings[crossings<0] = 0
-            # and get the places where we are crossing up. hit times! 
-            crossings = np.where(crossings)
-            ctime = time_sample[crossings[0]]
+
+            ctime = get_cfd_time(time_sample, adc2mVChAMax, 2000,auto_adjust_ped=False, use_rise=True)[0]
             ntrig = len(ctime)
 
-            # repeat for all channels  
-            crossings = np.diff(np.sign(-adc2mVChBMax - thresh))
-            crossings[crossings>0]=0
-            crossings = np.where(crossings)
-
-            montime = time_sample[crossings[0]]
+            montime = get_cfd_time(time_sample, -adc2mVChBMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
             is_good, is_bad = get_valid(ctime, montime, False)
             nmon = np.sum(is_good)
             mon_bad = np.sum(is_bad)*self.mon_lt_good/(1-self.mon_lt_good)
         
-            crossings = np.diff(np.sign(-adc2mVChDMax - thresh))
-            crossings[crossings>0]=0
-            crossings = np.where(crossings)
-
-            rectime = time_sample[crossings[0]]
+            rectime = get_cfd_time(time_sample, -adc2mVChDMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
             is_good, is_bad = get_valid(ctime, rectime, True)
             nrec = np.sum(is_good)
+            
             rec_bad = np.sum(is_bad)*self.rec_lt_good/(1-self.rec_lt_good)
 
             t_total += ntrig
