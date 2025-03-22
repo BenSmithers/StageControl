@@ -1,6 +1,6 @@
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject, QTimer
 
-from StageControl.picocode.read_pico import PicoMeasure
+
 class DAQWorker(QObject):
 
     """
@@ -13,16 +13,20 @@ class DAQWorker(QObject):
 
 
     """
+    
+
     change_wavelength = pyqtSignal(int)
     
 
     # wavelength, triggers, monitors, receivers 
     data_recieved = pyqtSignal(int, int, int, int, int, int)
     message_signal = pyqtSignal(str)
+    initialized = pyqtSignal()
     
     MAX_WAVE = 5
     def __init__(self, nopico=False):
         super(QObject, self).__init__()
+        from StageControl.picocode.read_pico import PicoMeasure
         self._timer = QTimer()
         self._timer.timeout.connect(self.measure)
         
@@ -40,27 +44,34 @@ class DAQWorker(QObject):
         """
         self._refill_kind = 0 
         
-        self._last_wave = 6
+        self._last_wave = 0
         self._is_striping = False
         self._running = False
     
+    @pyqtSlot()
     def initialize(self):
         if self._nopico:
             self.message_signal.emit("IN DEBUG MODE!")
             return 
         self._pico.initialze()
         self.message_signal.emit("Initialized PicoScope")
+        self.initialized.emit()
 
     @pyqtSlot()
     def gain_run(self):
+        if self._nopico:
+            return
         self.message_signal.emit("Making Gain Measurement")
         self._pico.calibrate()
         
 
     @pyqtSlot(bool)
     def start_data_taking(self, is_striping:bool):
+        if self._nopico:
+            self.message_signal.emit("In nopico mode. No data will be taken")
+            return 
         self._is_striping = is_striping
-        self._last_wave = 6
+        self._last_wave = 0
         self._running = True 
 
         if self._is_striping:
@@ -75,7 +86,7 @@ class DAQWorker(QObject):
             So we do that and reset these variables
         """
         self._timer.stop()
-        self._last_wave = 6
+        self._last_wave = 0
         self._is_striping = False
         self._running = False
         self.message_signal.emit("Stopping run")
@@ -86,7 +97,7 @@ class DAQWorker(QObject):
             Measure the current intensity. 
             If we aren't doing "striping" we immediately send the data-log signal and wait 30 seconds before starting again
         """
-        if self._running:
+        if self._running and (not self._nopico):
             try:
                 trig, mon, rec, mon_dark, rec_dark = self._pico.measure()
             except Exception as e:
@@ -97,7 +108,7 @@ class DAQWorker(QObject):
 
             if self._is_striping and self._running:
                 self.data_recieved.emit(self._last_wave, trig, mon, rec, mon_dark, rec_dark)
-                self._last_wave-=1 
+                self._last_wave+=1
                 self._last_wave = ((self._last_wave-1) % self.MAX_WAVE)+1
                 self.change_wavelength.emit(self._last_wave )
             else:

@@ -91,8 +91,9 @@ class main_window(QMainWindow):
     """
     initialize = pyqtSignal()
     initialize_usb = pyqtSignal()
+    initialize_daq = pyqtSignal()
     killConnection = pyqtSignal()
-
+    
     reinitialize = pyqtSignal()
     def __init__(self,parent=None, fake=False, nopico = False):
         QWidget.__init__(self, parent)
@@ -143,14 +144,15 @@ class main_window(QMainWindow):
             self.daq_worker.change_wavelength.connect(self.ui.control_widget.change_wavelength)
             self.daq_worker.message_signal.connect(self.thread_message)
             #self.daq_worker.refill_signal.connect(self.ui.pipes.refill_handler)
-            
+            self.daq_worker.initialized.connect(self.ui.control_widget.unlock)
             #self.ui.pipes.refill_complete.connect(self.daq_worker.refill_complete)
             self.ui.control_widget.done_signal.connect(self.daq_worker.measure)
             self.ui.control_widget.start_signal.connect(self.daq_worker.start_data_taking)
             self.ui.control_widget.stop_signal.connect(self.daq_worker.stop_data_taking)
             self.ui.control_widget.ui.gain_button.clicked.connect(self.daq_worker.gain_run)
+            self.initialize_daq.connect(self.daq_worker.initialize)
+            self.initialize_daq.emit()
             
-            self.daq_worker.initialize()
             
         except Exception as e:
             self.dialog = WarnWidget(parent=self, message="Critical Error {}".format(e))
@@ -224,6 +226,7 @@ class main_window(QMainWindow):
             self.ui.pipes.interrupt_signal.connect(self.worker_thread.interrupt)
             self.killConnection.connect(self.worker_thread.finish)
             
+            self.ui.control_widget.start_circulation.connect(self.ui.pipes.start_cycle)
             self.ui.control_widget.start_refil.connect(self.ui.pipes.start_auto_refill)
             self.ui.control_widget.stop_signal.connect(self.ui.pipes.stop_auto_refill)
 

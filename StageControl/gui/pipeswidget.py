@@ -112,6 +112,25 @@ class PipesWidget(QtWidgets.QWidget):
 
         self._last_update_time = time()
 
+        """
+            Whether or not to cycle pumps on and off
+        """
+        self._cycle_power = False 
+        """
+        States 
+            0 - no state / uninitialized
+            1 - pumping 
+            2 - not pumping
+        Cycle Water
+            0 return water
+            1 supply water
+        
+        """
+        self._cycle_state = 0
+        self._cycle_water = 0
+        self._last_cycle_time = -1
+        self._cycle_freq = 5*60
+
         self.update()
         #self.thread_man = QThreadPool(self)
         #self.setupThread()
@@ -123,6 +142,19 @@ class PipesWidget(QtWidgets.QWidget):
         else:
             self._obj = open(DFILE, 'a')
 
+    def start_cycle(self,water_type, frequency):
+        """
+            Frequency should be in seconds! 
+        """
+        self.ui.status_label.setText("Starting Continuous Circulation")
+        self.disable_all()
+        self._cycle_power = True 
+        self._cycle_state=0
+        assert water_type==0 or water_type==1, "Invalid water type"
+        self._cycle_water = water_type
+        assert frequency>1*60, "Frequency too high"
+        self._cycle_freq = frequency
+        self.ui.stop_button.setEnabled(True)
 
     def stop_button(self):
         self.ui.status_label.setText("... Awaiting Input")
@@ -178,6 +210,17 @@ class PipesWidget(QtWidgets.QWidget):
         self._refill_kind = -1
         self._refill_timeout = -1
         self._auto_refill_enabled = False
+
+        self._cycle_power = False 
+        self.ui.sv1_button.setChecked(False)
+        self.ui.sv2_button.setChecked(False)
+        self.ui.bv1_button.setChecked(False)
+        self.ui.pu1_button.setChecked(False)
+        self.ui.bv6_button.setChecked(False)
+        self._cycle_state=0
+        self._cycle_water = -1
+        self._cycle_freq = -1
+
     def refill_handler(self):
         self._logger.insert_text("Auto Refill Time {} \n".format(self._refill_kind)) 
         if self._refill_kind==0:
@@ -584,6 +627,38 @@ class PipesWidget(QtWidgets.QWidget):
                     self._draining_open_tank=False
 
         self.timer.start(2500)
+
+        if self._cycle_power:
+            if self._cycle_state==0: # we need to start it up! 
+                self.ui.status_label.setText("First Pumping")
+                self._cycle_state = 1
+                self._last_cycle_time = time()
+                self.ui.sv1_button.setChecked(True)
+                self.ui.sv2_button.setChecked(True)
+                self.ui.bv1_button.setChecked(self._cycle_water==0)
+                self.ui.pu1_button.setChecked(True)
+                self.ui.bv6_button.setChecked(True)
+            if (time()- self._last_cycle_time)>=60: # only ever pump for a minute
+                if self._cycle_state==1: # we were pumping, now we wait
+                    self.ui.status_label.setText("Waiting")
+                    self._cycle_state=2
+                    self._last_cycle_time = time()
+                    self.ui.sv1_button.setChecked(False)
+                    self.ui.sv2_button.setChecked(False)
+                    self.ui.bv1_button.setChecked(False)
+                    self.ui.pu1_button.setChecked(False)
+                    self.ui.bv6_button.setChecked(False)
+            if (time()- self._last_cycle_time)>=self._cycle_freq:
+                if self._cycle_state==2: # we were waiting, now we pump
+                    self.ui.status_label.setText("Pumping")
+                    self._cycle_state=1 
+                    self._last_cycle_time = time()
+                    self.ui.sv1_button.setChecked(True)
+                    self.ui.sv2_button.setChecked(True)
+                    self.ui.bv1_button.setChecked(self._cycle_water==0)
+                    self.ui.pu1_button.setChecked(True)
+                    self.ui.bv6_button.setChecked(True)
+
 
         if self._automated:
             # first, check if the chamber is being drained 

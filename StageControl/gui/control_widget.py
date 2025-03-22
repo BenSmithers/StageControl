@@ -22,6 +22,7 @@ class ControlWidget(QtWidgets.QWidget):
     start_signal = pyqtSignal(bool)
     stop_signal = pyqtSignal()
     start_refil = pyqtSignal(int, int)
+    start_circulation = pyqtSignal(int, int)
 
 
     def __init__(self, parent:QWidget):
@@ -39,6 +40,7 @@ class ControlWidget(QtWidgets.QWidget):
         self.ui.test_email.clicked.connect(self.test_email)
         self.ui.start_data_but.clicked.connect(self.run_button)
         self.ui.auto_refill.clicked.connect(self.auto_refill_toggle)
+        self.ui.circulate.clicked.connect(self.auto_refill_toggle)
         
         self.start_mode = True 
 
@@ -107,9 +109,39 @@ class ControlWidget(QtWidgets.QWidget):
         self._stage_done = False 
         self.auto_refill_toggle()
 
+    @pyqtSlot()
+    def unlock(self):
+        self.ui.goPosBut.setEnabled(True)
+        self.ui.goWaveBut.setEnabled(True) 
+        self.ui.adc_lbl.setEnabled(True)
+        self.ui.start_data_but.setEnabled(True)
+
     def auto_refill_toggle(self):
-        self.ui.refill_freq_spin.setEnabled(self.ui.auto_refill.isChecked())
-        self.ui.refill_what_combo.setEnabled(self.ui.auto_refill.isChecked())
+        self.ui.start_data_but.setEnabled(True)
+        auto_refill = self.ui.auto_refill.isChecked()
+        circulate = self.ui.circulate.isChecked()
+        if auto_refill:
+            self.ui.circulate.setEnabled(False)
+            self.ui.refill_freq_lbl.setText("Refill Period [min]:")
+            self.ui.refill_what_lbl.setText("Refill With:")
+            self.ui.refill_freq_spin.setMaximum(240)
+            self.ui.refill_freq_spin.setMinimum(30)
+            self.ui.refill_freq_spin.setValue(90)
+        else:
+            self.ui.circulate.setEnabled(True)
+        if circulate:
+            self.ui.refill_freq_lbl.setText("Toggle Freq [min]:")
+            self.ui.refill_what_lbl.setText("Circulate With:")
+            self.ui.refill_freq_spin.setMaximum(10)
+            self.ui.refill_freq_spin.setMinimum(2)
+            self.ui.refill_freq_spin.setValue(5)
+            self.ui.auto_refill.setEnabled(False)
+        else:
+            self.ui.auto_refill.setEnabled(True)
+        if auto_refill and circulate:
+            self.ui.auto_refill.setEnabled(True)
+            self.ui.auto_refill.setEnabled(True)
+            self.ui.start_data_but.setEnabled(False) # this should be unreachable...
 
 
     def run_button(self):
@@ -132,16 +164,21 @@ class ControlWidget(QtWidgets.QWidget):
 
             refill_period = self.ui.refill_freq_spin.value()
             auto_refill = self.ui.auto_refill.isChecked()
+            circulate = self.ui.circulate.isChecked()
+            if auto_refill and circulate:
+                print("Invalid configuration! Aborting")
+                return 
             selected = self.ui.refill_what_combo.currentIndex()
             """
                 0 - tank 
                 1 - supply 
                 2 - osmosis
             """
-
             self.start_signal.emit(striping)
             if auto_refill:
                 self.start_refil.emit(selected, refill_period)
+            if circulate:
+                self.start_circulation.emit(selected, refill_period*60)
             
             self.ui.start_data_but.setText("Stop Run")
             

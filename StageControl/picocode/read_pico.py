@@ -31,7 +31,7 @@ class PicoMeasure:
         self.nextSample = 0
         self.autoStopOuter = False
         self.wasCalledBack = False
-        self._initialized = False
+        self._initialized = True
 
         self.collection_time = 30
 
@@ -43,14 +43,17 @@ class PicoMeasure:
         self.chandle = ctypes.c_int16()
         self.status = {}
         self._good = False 
-        while False: #not self._good:
+        self.start()
+        
+        self.collection_time = 30
+        return
+        while not self._good:
+            print("Check")
             self.start()
-            self.collection_time = 5
-            self.initialze() 
+            self.collection_time = 10
+            self.calibrate() 
             if not self._good:
                 self.close()
-        self.start()
-        self.initialze() 
         self.collection_time = 30
 
 
@@ -88,15 +91,18 @@ class PicoMeasure:
         # range = PS3000A_2V = 7
         # analogue offset = 0 V
         self.channel_range = ps.PS3000A_RANGE['PS3000A_2V']
-        self.ch_range_2 = ps.PS3000A_RANGE['PS3000A_20MV'] +2
+        self.ch_range_2 = ps.PS3000A_RANGE['PS3000A_100MV'] 
+        self.ch_range_3 = ps.PS3000A_RANGE['PS3000A_100MV'] 
         self.status["setChA"] = ps.ps3000aSetChannel(self.chandle,
                                                 ps.PS3000A_CHANNEL['PS3000A_CHANNEL_A'],
                                                 enabled,
                                                 ps.PS3000A_COUPLING['PS3000A_DC'],
                                                 self.channel_range,
                                                 analogue_offset)
+        
+        #ps.ps3000aGetChannelInformation()
         assert_pico_ok(self.status["setChA"])
-
+        
         # Set up channel B
         # handle = self.chandle
         # channel = PS3000A_CHANNEL_B = 1
@@ -111,14 +117,16 @@ class PicoMeasure:
                                                 self.ch_range_2,
                                                 analogue_offset)
         assert_pico_ok(self.status["setChB"])
+        
 
         self.status["setChD"] = ps.ps3000aSetChannel(self.chandle,
                                                 ps.PS3000A_CHANNEL['PS3000A_CHANNEL_D'],
                                                 enabled,
                                                 ps.PS3000A_COUPLING['PS3000A_DC'],
-                                                self.ch_range_2,
+                                                self.ch_range_3,
                                                 analogue_offset)
         assert_pico_ok(self.status["setChB"])
+        
 
 
         # Size of capture
@@ -134,7 +142,7 @@ class PicoMeasure:
         self.bufferAMax = np.zeros(shape=self.sizeOfOneBuffer, dtype=np.int16)
         self.bufferBMax = np.zeros(shape=self.sizeOfOneBuffer, dtype=np.int16)
         self.bufferDMax = np.zeros(shape=self.sizeOfOneBuffer, dtype=np.int16)
-        memory_segment = 0
+        self.memory_segment = 0
 
         # Set data buffer location for data collection from channel A
         # handle = self.chandle
@@ -149,10 +157,10 @@ class PicoMeasure:
                                                             self.bufferAMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
                                                             None,
                                                             self.sizeOfOneBuffer,
-                                                            memory_segment,
+                                                            self.memory_segment,
                                                             ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'])
         assert_pico_ok(self.status["setDataBuffersA"])
-
+        
         # Set data buffer location for data collection from channel B
         # handle = self.chandle
         # source = PS3000A_CHANNEL_B = 1
@@ -166,19 +174,19 @@ class PicoMeasure:
                                                             self.bufferBMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
                                                             None,
                                                             self.sizeOfOneBuffer,
-                                                            memory_segment,
+                                                            self.memory_segment,
                                                             ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'])
         assert_pico_ok(self.status["setDataBuffersB"])
-
+        
         self.status["setDataBuffersD"] = ps.ps3000aSetDataBuffers(self.chandle,
                                                             ps.PS3000A_CHANNEL['PS3000A_CHANNEL_D'],
                                                             self.bufferDMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
                                                             None,
                                                             self.sizeOfOneBuffer,
-                                                            memory_segment,
+                                                            self.memory_segment,
                                                             ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'])
         assert_pico_ok(self.status["setDataBuffersD"])
-
+        
         self.sampleInterval = ctypes.c_int32(8)
         
 
@@ -186,7 +194,6 @@ class PicoMeasure:
         chana, chanb, chand = self.measure(True)
         bad = np.min(chana)>=0
         self._good = not bad 
-        print("{} noise".format("Bad" if bad else "Good"))
         self.bped = np.mean(chanb)
         self.dped = np.mean(chand)
         self._initialized = True # and (self._good)
@@ -212,11 +219,8 @@ class PicoMeasure:
             Get threshold
         """
         trigger, chanb, chand = self.measure(True)
-        bad = np.min(trigger)<0
         #time_sample = np.linspace(0, (self.totalSamples - 1) * self.sampleIntervalNs, self.totalSamples)
         bins = np.linspace(0, 100, 128)
-
-        time_sample = np.linspace(0, (self.totalSamples - 1) * self.actualSampleIntervalNs, self.totalSamples)
             
         # we drop this down to just a difference in the sign (-2, 0, +2)
         # but shifted down by the threshold 
@@ -230,11 +234,15 @@ class PicoMeasure:
         mon_peaks = []
         rec_peaks = []
         for ic in crossings:
-            mon_peaks.append(-1*np.min(chanb[ic:ic+70]))
-            rec_peaks.append(-1*np.min(chand[ic:ic+70]))
+            mon_peaks.append(-1*np.min(chanb[ic:ic+35]))
+            rec_peaks.append(-1*np.min(chand[ic:ic+35]))
 
         mon_data = np.histogram(mon_peaks, bins)[0]
         rec_data = np.histogram(rec_peaks, bins)[0]
+
+        self._good = mon_data[-2]>20 and rec_data[-2]>20
+        
+
 
         out_data = {
             "bins" : bins.tolist(),
@@ -248,7 +256,7 @@ class PicoMeasure:
 
 
 
-    def measure(self, give_waves = False):
+    def measure(self, give_waves = False, raw_data=False):
         if (not self._initialized) and not give_waves:
             self.initialze()
 
@@ -291,7 +299,6 @@ class PicoMeasure:
                                                             ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'],
                                                             self.sizeOfOneBuffer)
             assert_pico_ok(self.status["runStreaming"])
-            time.sleep(5)
 
             self.actualSampleInterval = self.sampleInterval.value
             self.actualSampleIntervalNs = self.actualSampleInterval *1
@@ -336,15 +343,17 @@ class PicoMeasure:
             # Convert ADC counts data to mV
             conv_t = time.time()
             if give_waves:
+                if raw_data:
+                    return self.bufferCompleteA, self.bufferCompleteB, self.bufferCompleteD
                 adc2mVChAMax = adc2mV(self.bufferCompleteA, self.channel_range, maxADC)
                 adc2mVChBMax = adc2mV(self.bufferCompleteB, self.ch_range_2, maxADC)
-                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_2, maxADC)
+                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_3, maxADC)
                 return adc2mVChAMax, adc2mVChBMax, adc2mVChDMax
 
             else:
                 adc2mVChAMax = adc2mV(self.bufferCompleteA, self.channel_range, maxADC)
                 adc2mVChBMax = adc2mV(self.bufferCompleteB, self.ch_range_2, maxADC) - self.bped
-                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_2, maxADC) - self.dped
+                adc2mVChDMax = adc2mV(self.bufferCompleteD, self.ch_range_3, maxADC) - self.dped
 
 
 

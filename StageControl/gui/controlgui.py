@@ -41,19 +41,23 @@ class Ui_Widget(object):
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.positionSpin)
         self.goPosBut = QtWidgets.QPushButton(Widget)
         self.goPosBut.setObjectName("goPosBut")
+        self.goPosBut.setEnabled(False)
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.goPosBut)
         self.goWaveBut = QtWidgets.QPushButton(Widget)
         self.goWaveBut.setObjectName("goWaveBut")
+        self.goPosBut.setEnabled(False)
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.goWaveBut)
 
         self.adc_lbl = QtWidgets.QPushButton(Widget)
         self.adc_lbl.setObjectName("adc_lbl")
         self.adc_lbl.setText("Set ADC")
+        self.adc_lbl.setEnabled(False)
         self.adc_spin = QtWidgets.QSpinBox(Widget)
         self.adc_spin.setObjectName("adc_spin")
         self.adc_spin.setMinimum(0)
         self.adc_spin.setMaximum(1023)
         self.adc_spin.setValue(900)
+        
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.adc_lbl)
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.adc_spin)
 
@@ -138,11 +142,16 @@ class Ui_Widget(object):
         self.auto_refill.setObjectName("auto_refill")
         self.auto_refill.setText("Auto Refill?")
         self.formLayout.setWidget(9, QtWidgets.QFormLayout.FieldRole, self.auto_refill)
+        
+        self.circulate = QtWidgets.QCheckBox(Widget)
+        self.circulate.setObjectName("circulate")
+        self.circulate.setText("Circulate Water?")
+        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.circulate)
 
         self.gain_button = QtWidgets.QPushButton(Widget)
         self.gain_button.setObjectName("gain_button")
         self.gain_button.setText("Calibrate Threshold")
-        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.gain_button)
+        self.formLayout.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.gain_button)
 
 
         self.refill_freq_lbl = QtWidgets.QLabel(Widget)
@@ -153,8 +162,8 @@ class Ui_Widget(object):
         self.refill_freq_spin.setMaximum(240)
         self.refill_freq_spin.setMinimum(30)
         self.refill_freq_spin.setValue(120) # this must be updated based on the number of files in the data folder
-        self.formLayout.setWidget(11, QtWidgets.QFormLayout.LabelRole, self.refill_freq_lbl)
-        self.formLayout.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.refill_freq_spin)
+        self.formLayout.setWidget(12, QtWidgets.QFormLayout.LabelRole, self.refill_freq_lbl)
+        self.formLayout.setWidget(12, QtWidgets.QFormLayout.FieldRole, self.refill_freq_spin)
 
         self.refill_what_lbl = QtWidgets.QLabel(Widget)
         self.refill_what_lbl.setObjectName("refill_what_lbl")
@@ -164,8 +173,8 @@ class Ui_Widget(object):
         self.refill_what_combo.addItem("Tank Water")
         self.refill_what_combo.addItem("Supply Water")
         self.refill_what_combo.addItem("RO Water")
-        self.formLayout.setWidget(12, QtWidgets.QFormLayout.LabelRole, self.refill_what_lbl)
-        self.formLayout.setWidget(12, QtWidgets.QFormLayout.FieldRole, self.refill_what_combo)
+        self.formLayout.setWidget(13, QtWidgets.QFormLayout.LabelRole, self.refill_what_lbl)
+        self.formLayout.setWidget(13, QtWidgets.QFormLayout.FieldRole, self.refill_what_combo)
 
         self.run_numb_lbl = QtWidgets.QLabel(Widget)
         self.run_numb_lbl.setObjectName("run_numb_lbl")
@@ -175,15 +184,16 @@ class Ui_Widget(object):
         self.run_numb_line.setMaximum(1000000)
         self.run_numb_line.setMinimum(0)
         self.run_numb_line.setValue(0) # this must be updated based on the number of files in the data folder
-        self.formLayout.setWidget(13, QtWidgets.QFormLayout.LabelRole, self.run_numb_lbl)
-        self.formLayout.setWidget(13, QtWidgets.QFormLayout.FieldRole, self.run_numb_line)
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.LabelRole, self.run_numb_lbl)
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.run_numb_line)
 
         self.start_data_but = QtWidgets.QPushButton(Widget)
         self.start_data_but.setObjectName("start_data_but")
         self.start_data_but.setText("Start Run")
-        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.start_data_but)
+        self.start_data_but.setEnabled(False)
+        self.formLayout.setWidget(15, QtWidgets.QFormLayout.FieldRole, self.start_data_but)
 
-        bottom_start_index = 15
+        bottom_start_index = 16
 
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.formLayout.setItem(bottom_start_index,  QtWidgets.QFormLayout.FieldRole, spacerItem)
