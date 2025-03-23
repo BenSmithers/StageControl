@@ -150,11 +150,20 @@ class PipesWidget(QtWidgets.QWidget):
         self.disable_all()
         self._cycle_power = True 
         self._cycle_state=0
-        assert water_type==0 or water_type==1, "Invalid water type"
+        assert water_type==0 or water_type==1 or water_type==2, "Invalid water type"
         self._cycle_water = water_type
         assert frequency>1*60, "Frequency too high"
         self._cycle_freq = frequency
         self.ui.stop_button.setEnabled(True)
+
+        self._automated = True 
+        self._draining = False 
+        self._filling_osmo = True  
+        self._filling_filter = False 
+        self._filling_tank = False 
+        self._bleeding_osmo = False
+        self._osmo_state_variable = 0
+
 
     def stop_button(self):
         self.ui.status_label.setText("... Awaiting Input")
@@ -241,6 +250,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._draining = True 
         self._filling_osmo = True  
         self._filling_filter = False 
+        self._bleeding_osmo = False
         self._filling_tank = False 
         self._osmo_state_variable = 0
         self.disable_all()
@@ -628,7 +638,7 @@ class PipesWidget(QtWidgets.QWidget):
 
         self.timer.start(2500)
 
-        if self._cycle_power:
+        if self._cycle_power and self._cycle_water!=2:
             if self._cycle_state==0: # we need to start it up! 
                 self.ui.status_label.setText("First Pumping")
                 self._cycle_state = 1
@@ -812,7 +822,7 @@ class PipesWidget(QtWidgets.QWidget):
                         if self._auto_refill_enabled:
                             self.refill_timer.start(self._refill_timeout*60*1000) 
 
-                if overflow:
+                if overflow and (not self._cycle_power): # only break out of this state if we're not cycling:
                     self._overflow_counter+=1
 
                     if self._overflow_counter>3:

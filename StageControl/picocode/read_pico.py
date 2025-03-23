@@ -249,10 +249,11 @@ class PicoMeasure:
             "monitor":mon_data.tolist(),
             "rec":rec_data.tolist()
         }
-        return out_data
+        
         _obj = open(os.path.join(os.path.dirname(__file__), "charge.json"), 'wt')
         json.dump(out_data, _obj,indent=4)
         _obj.close()
+        return out_data
 
 
 

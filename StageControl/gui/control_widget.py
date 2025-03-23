@@ -138,11 +138,18 @@ class ControlWidget(QtWidgets.QWidget):
             self.ui.auto_refill.setEnabled(False)
         else:
             self.ui.auto_refill.setEnabled(True)
+        
+        if (auto_refill or circulate):
+            self.ui.refill_freq_spin.setEnabled(True)
+            self.ui.refill_what_combo.setEnabled(True)  
+        else:
+            self.ui.refill_freq_spin.setEnabled(False)
+            self.ui.refill_what_combo.setEnabled(False)  
         if auto_refill and circulate:
             self.ui.auto_refill.setEnabled(True)
-            self.ui.auto_refill.setEnabled(True)
+            self.ui.circulate.setEnabled(True)
             self.ui.start_data_but.setEnabled(False) # this should be unreachable...
-
+                  
 
     def run_button(self):
         if self.start_mode:
@@ -193,11 +200,15 @@ class ControlWidget(QtWidgets.QWidget):
             self.ui.run_numb_line.setEnabled(False)
             self.ui.auto_refill.setEnabled(False)
             self.ui.rotate_wave.setEnabled(False)
+            if not striping:
+                self._dataclock.start(int(1.5*60*1000))
             #self.ui.rate_combo.setEnabled(False)
-            self._dataclock.start(int(1.5*60*1000))
             self._running = True 
         else:
             self.stop_signal.emit()
+            self._led_done = False 
+            self._stage_done = False
+            self._adc_done = False 
             self._dataclock.stop()
             self.ui.start_data_but.setText("Start Run")
             self.ui.run_numb_line.setValue(self.ui.run_numb_line.value() + 1)
@@ -308,17 +319,20 @@ class ControlWidget(QtWidgets.QWidget):
 
     @pyqtSlot(int, int, int, int, int, int)
     def write_data(self, wavelen, trig, mon, rec, mon_dark, rec_dark):
-        write_header = not os.path.exists(self._write_to)
-        
-        _obj = open(self._write_to, 'at')
-        if write_header:
-            _obj.write("#Time, trig, monitor, receiver, monitor_dark, receiver_dark, ADC, wave length\n")
-        
-        if self.ui.rotate_wave.isChecked():            
-            _obj.write("{}, {},{},{}, {}, {}, {}, {}\n".format(time(), trig, mon, rec,mon_dark,rec_dark, self.ui.adc_spin.value(), wavelen, ))
+        if self._running:
+            write_header = not os.path.exists(self._write_to)
+            
+            _obj = open(self._write_to, 'at')
+            if write_header:
+                _obj.write("#Time, trig, monitor, receiver, monitor_dark, receiver_dark, ADC, wave length\n")
+            
+            if self.ui.rotate_wave.isChecked():            
+                _obj.write("{}, {},{},{}, {}, {}, {}, {}\n".format(time(), trig, mon, rec,mon_dark,rec_dark, self.ui.adc_spin.value(), wavelen, ))
+            else:
+                _obj.write("{}, {},{},{}, {}, {}, {}, {}\n".format(time(), trig, mon, rec,mon_dark, rec_dark, self.ui.adc_spin.value(), self.ui.waveCombo.currentIndex()))
+            _obj.close()
         else:
-            _obj.write("{}, {},{},{}, {}, {}, {}, {}\n".format(time(), trig, mon, rec,mon_dark, rec_dark, self.ui.adc_spin.value(), self.ui.waveCombo.currentIndex()))
-        _obj.close()
+            self.insert_text("Ignoring non-run data")
     
     @pyqtSlot()
     def led_ready(self):
@@ -353,8 +367,7 @@ class ControlWidget(QtWidgets.QWidget):
 
     @pyqtSlot(dict)
     def process_response(self, packet):
-        self.insert_text(packet["call"].decode())
-        self.insert_text(packet["response"].decode())
+        #self.insert_text(packet["call"].decode())
         if "\n" not in packet["response"].decode():
             self.insert_text("\n")
         data = packet["data"]
@@ -363,6 +376,7 @@ class ControlWidget(QtWidgets.QWidget):
             self._stage_done = True 
             self.checker()
         elif "GS" in packet["response"].decode():
+            self.insert_text(packet["response"].decode())
             self.insert_text("GS Status response: {}\n".format(data)) 
 
             position = self.ui.positionSpin.value()
@@ -372,6 +386,7 @@ class ControlWidget(QtWidgets.QWidget):
             #self.dialog.ui.buttonBox.helpRequested.connect(self.help)
             #self.dialog.exec_() 
         elif "IN" in packet["response"].decode():
+            self.insert_text(packet["response"].decode())
             for entry in data:
                 self.insert_text("Begin Info Response Dump\n")
                 self.insert_text("    {}\n".format(entry))
