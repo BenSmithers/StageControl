@@ -198,6 +198,7 @@ class ControlWidget(QtWidgets.QWidget):
             self.ui.refill_what_combo.setEnabled(False)
             self.ui.refill_freq_spin.setEnabled(False)
             self.ui.run_numb_line.setEnabled(False)
+            self.ui.circulate.setEnabled(False)
             self.ui.auto_refill.setEnabled(False)
             self.ui.rotate_wave.setEnabled(False)
             if not striping:
@@ -216,6 +217,7 @@ class ControlWidget(QtWidgets.QWidget):
             self.ui.rotate_wave.setEnabled(True)
             self.ui.adc_spin.setEnabled(True)
             self.ui.waveCombo.setEnabled(True)
+            self.ui.circulate.setEnabled(True)
             self.ui.rotate_wave.setEnabled(True)
             self.ui.positionSpin.setEnabled(True)
             self.ui.goPosBut.setEnabled(True)

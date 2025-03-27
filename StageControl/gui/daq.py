@@ -28,7 +28,7 @@ class DAQWorker(QObject):
         super(QObject, self).__init__()
         from StageControl.picocode.read_pico import PicoMeasure
 
-        
+        self._timer=QTimer(self)
         self._nopico = nopico
         if nopico:
             self._pico = None
@@ -46,6 +46,7 @@ class DAQWorker(QObject):
         self._last_wave = 0
         self._is_striping = False
         self._running = False
+        self._timer.timeout.connect(self.measure)
     
     @pyqtSlot()
     def initialize(self):
@@ -75,8 +76,9 @@ class DAQWorker(QObject):
 
         if self._is_striping:
             self.change_wavelength.emit(self._last_wave )
-        self.message_signal.emit("Starting run")
-                
+        else:
+            self._timer.start(5)
+        self.message_signal.emit("Starting run")    
 
     @pyqtSlot()
     def stop_data_taking(self):
@@ -88,6 +90,7 @@ class DAQWorker(QObject):
         self._is_striping = False
         self._running = False
         self.message_signal.emit("Stopping run")
+        self._timer.stop()
 
     @pyqtSlot()
     def measure(self):
@@ -111,6 +114,7 @@ class DAQWorker(QObject):
                 self.change_wavelength.emit(self._last_wave )
             elif (not self._is_striping) and self._running:
                 self.data_recieved.emit(-1, trig, mon, rec, mon_dark, rec_dark)
+                self._timer.start(10)
             else:
                 # not running? 
                 return

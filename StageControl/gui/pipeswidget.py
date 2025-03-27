@@ -156,13 +156,14 @@ class PipesWidget(QtWidgets.QWidget):
         self._cycle_freq = frequency
         self.ui.stop_button.setEnabled(True)
 
-        self._automated = True 
-        self._draining = False 
-        self._filling_osmo = True  
-        self._filling_filter = False 
-        self._filling_tank = False 
-        self._bleeding_osmo = False
-        self._osmo_state_variable = 0
+        if water_type==2:
+            self._automated = True 
+            self._draining = False 
+            self._filling_osmo = True  
+            self._filling_filter = False 
+            self._filling_tank = False 
+            self._bleeding_osmo = False
+            self._osmo_state_variable = 0
 
 
     def stop_button(self):
