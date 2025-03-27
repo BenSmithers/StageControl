@@ -25,7 +25,6 @@ This will start the water quality monitoring GUI.
 
 ## Water Leak Found
 1. Immediately go to the "pump operations" tab and press the button on the top-left "Drain Chamber".
-2. Notify Ben Smithers [by email](mailto:bsmithers@triumf.ca), slack @bsmithers, and/or by CERN Phone no 69399. 
 3. Once it is safe to do so, go to the WMS and clean up the spilled water. You may need to move the desy table left (using the LEFT red button) about 10cm. 
 4. Under "Control" press "Stop Run" 
 5. Once the chamber is drained 
