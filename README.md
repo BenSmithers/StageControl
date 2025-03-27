@@ -5,69 +5,94 @@ If there is no terminal open, press `Ctrl+Alt+T` to launch one.
 Then, execute the `launch.sh` bash script. 
 This will start the water quality monitoring GUI. 
 
-## Shift Checks:
+1. [Interventions](#Interventions)
 
-Once an hour, press "Take Pictures" on the camera control tab. 
-This should take a few minutes, but you will ultimately see a picture along the length of the WMS along with a fully dark picture that isn't updating (that's okay). 
-Check that there is no water. 
+    a. [Water Leak Found](#water-leak-found)
+    
+    b. [Other Interventions](#other-interventions)
 
-## If you see water
+    c. [Bleeding Osmosis Pressure](#bleeding-osmosis-pressure)
 
+2. [Taking Data](#taking-data)
+
+    a. [Continuous Flow Monitoring](#continuous-flow-monitoring)
+
+    b. [Regular Refill Monitoring](#regular-refill-monitoring)
+
+    c. [No Flow Refill Monitoring](#no-flow-monitoring)
+
+# Interventions
+
+## Water Leak Found
 1. Immediately go to the "pump operations" tab and press the button on the top-left "Drain Chamber".
 2. Notify Ben Smithers [by email](mailto:bsmithers@triumf.ca), slack @bsmithers, and/or by CERN Phone no 69399. 
 3. Once it is safe to do so, go to the WMS and clean up the spilled water. You may need to move the desy table left (using the LEFT red button) about 10cm. 
 4. Under "Control" press "Stop Run" 
 5. Once the chamber is drained 
 
-## Starting Your Shift
+## Other Interventions
 
-On the `control` tab, verify that the emails are correct for the two people currently on shift. 
-You may need to manually press "update emails" if the line editor did not automatically update. 
-If an address is not accurate, edit it. 
+### Bleeding Osmosis Pressure. 
 
-Once you've verified the addresses are accurate, click "Test Alert Email" and you should receive a test email from the wcte alert bot shortly. 
-If you don't receive an email, be sure to check your spam folder.
+# Taking Data
 
-If you want to opt-out of receiving the emails, just replace the auto-populated entry of your address with a blank line. 
-You will _only_ receive an email when there is a serious issue which may require prompt action; this is not necessarily recommended. 
+For each of these, an important first step is to ensure the LED flasher board is on and flashing. 
 
-## Normal Data Taking 
+1. Choose the 410nm LED, press the "Go!" button beside it.
+2. Press the "Set ADC" button; the value is not important. 
+3. From the Flash Rate drop-down menu, choose "8MHz".
+4. Choose the desired water type in the box below the board location, and then press "Update Filename"
+5. Generally, the "Rotate Wavelengths?" button should be checked. Leave it unchecked only for data where just a specific wavelength is needed at high precision. See [One-LED Runs](#one-led-runs).
 
-Data taking is all done throught the `Control` tab.
+![led on](readme_images/ledon.png "LEDs On")
+
+## Regular Refill Monitoring
+
+**This may not work for RO water anymore.**
+
+6. Select "Auto Refill?" You may need to de-select "Circulate Water?" if it is already checked. The GUI will not allow you to choose both. 
+7. Choose a refill period, usually 60-90 minutes is good, and select the type of water to refill the chamber with. 
+8. Press "Start Run." The WMS will automatically drain and fill the chamber, then repeat the refill at the selected frequency. Note the run number, and add it to the WMS runs spreadsheet. 
+9. After a few data points have been taken, you will be able to view them. Under "Plots", you can click the top of the two white bars at the foot of the window. This will open a file browser: select the file whose run number is associated with the one just started. 
+
+## Continuous Flow Monitoring
+
+6. You will first need to fill the chamber with the appropriate water. Under the "Pump Operations" tab, choose the "Fill with..." button associated with the water type you would like to fill the chamber with. **If you are doing RO water, you will first need to fill the chamber with supply water**.
+7. Now, back on the control tab, select "Circulate Water?" 
+8. Choose a "Toggle Frequency" in minutes. Pumps will run for one minute, then wait for the chosen amount of minutes before running again. 3-5 minutes is good
+9. Ensure you have selected the correct "Circulate With" water type. 
+10. Press "Start Run"
+11. See step 9, in [Regular Refill Monitoring](#regular-refill-monitoring)
+
+## No Flow Monitoring 
+
+6. Ensure no run is currently running. 
+Follow step 6 in [Continuous Flow Monitoring](#continuous-flow-monitoring). 
+7. Ensure "Auto Refill" and "Circulate Water" areboth unchecked.
+8. See step 9, in [Regular Refill Monitoring](#regular-refill-monitoring)
+
+
+
+## Other Data Taking Modes
 
 ### One-LED Runs
 
-1. Choose an LED frequency from the drop-down menu at the top. Press "Go!"beside the drop down menu.
+1. Choose the desired LED frequency from the drop-down menu at the top. Press "Go!" beside the drop down menu.
 2. Select an appropriate ADC to get ~0.3 counts per pulse. Try just getting one from this table 
 
 | nm  | ADC |
 |-----|-----|
 | 450 | 720 |
-| 410 | 756 |
-| 365 | 617 |
-| 295 | 589 |
-| 278 | 773 |
+| 410 | 840 |
+| 365 | 715 |
+| 295 | 610 |
+| 278 | 778 |
+| 255 | 800 |
 
 3. Select the MHz flash rate from the "Flash Rate" drop-down menu.
 4. Choose which water type is present in the water drop down menu, beside the "Update Filename" button.
 5. Make sure "Rotate Wavelengths?" is unchecked. 
-6. If auto-refill is needed, consult the [[#Auto-Refilling]] section, below
-7. Press the "Start Run" button
-8. Controls will lock out until the "Stop Run" button is pressed.  
 
-### Multi-LED Runs 
-1. Ensure the LED is turned on and at the MHz frequency. Press "Go!" beside the wavelength check button, press the "Set ADC" button, and then ensure the "Flash Rate" drop-down menu is set to the MHz frequency. 
-2. Check the "Rotate Wavelengths" checkbox. 
-3. If auto-refill is needed, consult the [[#Auto-Refilling]] section, below
-4. Press the "Start Run" button
-5. Controls will lock out until the "Stop Run" button is pressed
-
-### Auto-Refilling 
-
-Auto-refill automatically refills the tube on a timer. Only a few water types are supported right now. 
-
-1. Choose an appropriate refill period (this will be communicated ahead of time). 120 minutes is a good one 
-2. Choose which kind of water to refill *with.* Only supply water and return water are supported right now. 
 
 ## Filling or Draining the water chamber
 Navigate to the `Pump Operations` tab, when there you should see a picture of the water filtration layout. 
