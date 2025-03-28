@@ -27,11 +27,12 @@ def adc2mV(buffer, rang, maxADC):
 
 
 class PicoMeasure:
-    def __init__(self):
+    def __init__(self, block_mode = False):
         self.nextSample = 0
         self.autoStopOuter = False
         self.wasCalledBack = False
         self._initialized = True
+        self._block_mode = block_mode
 
         self.collection_time = 30
 
@@ -131,12 +132,16 @@ class PicoMeasure:
 
         # Size of capture
         # we want a lot of these. The more the better. Eventually reached diminishing returns 
-        self.sizeOfOneBuffer = 500 # 0000
-        self.sizeOfOneBuffer *= 100000
+        if self._block_mode:
+            self.sizeOfOneBuffer = 370*10000
+            self.totalSamples = self.sizeOfOneBuffer*1
+        else:
+            self.sizeOfOneBuffer = 500 # 0000
+            self.sizeOfOneBuffer *= 100000
 
-        numBuffersToCapture = 1
+            numBuffersToCapture = 1
 
-        self.totalSamples = self.sizeOfOneBuffer * numBuffersToCapture
+            self.totalSamples = self.sizeOfOneBuffer * numBuffersToCapture
 
         # Create buffers ready for assigning pointers for data collection
         self.bufferAMax = np.zeros(shape=self.sizeOfOneBuffer, dtype=np.int16)
@@ -188,7 +193,23 @@ class PicoMeasure:
         assert_pico_ok(self.status["setDataBuffersD"])
         
         self.sampleInterval = ctypes.c_int32(8)
-        
+        self.actualSampleInterval = self.sampleInterval.value
+
+        if self._block_mode:
+            self._timebase = 1
+            timeIntervalns = ctypes.c_float()
+            returnedMaxSamples = ctypes.c_int16()
+            n_segments= 1
+            status= ps.ps3000aGetTimebase2(self.chandle, self._timebase, self.totalSamples, ctypes.byref(timeIntervalns), 1, ctypes.byref(returnedMaxSamples), 0)
+            print("Using Time interval: {} ns".format(timeIntervalns))
+
+            self.actualSampleInterval = timeIntervalns.value
+
+            assert_pico_ok(status)
+            status=ps.ps3000aMemorySegments(self.chandle, n_segments, ctypes.byref(self.totalSamples))
+            assert_pico_ok(status)
+            status=ps.ps3000aSetNoOfCaptures(self.chandle, n_segments)
+    
 
     def initialze(self):
         chana, chanb, chand = self.measure(True)
@@ -255,6 +276,55 @@ class PicoMeasure:
         _obj.close()
         return out_data
 
+    def rapidblock(self, give_waves=False):
+        status = ps.ps3000aRunBlock(self.chandle, 0, self.totalSamples, self._timebase, 1, None, 0, None, None) 
+        assert_pico_ok(status)
+
+        ready= ctypes.c_int(0)
+        while ready==ctypes.c_int(0):
+            status = ps.ps3000aIsReady(self.chandle, ctypes.byref(ready))
+            time.sleep(0.04)
+
+        self.bufferAMax*=0
+        self.bufferBMax*=0
+        self.bufferDMax*=0
+        status = ps.ps3000aSetDataBuffer(self.chandle, ps.PS3000A_CHANNEL['PS3000A_CHANNEL_A'], self.bufferAMax,  self.bufferAMax.size, 0, ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'])
+        assert_pico_ok(status)
+        status = ps.ps3000aSetDataBuffer(self.chandle, ps.PS3000A_CHANNEL['PS3000A_CHANNEL_B'], self.bufferBMax,  self.bufferBMax.size, 0, ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'])
+        assert_pico_ok(status)
+        status = ps.ps3000aSetDataBuffer(self.chandle, ps.PS3000A_CHANNEL['PS3000A_CHANNEL_D'], self.bufferDMax,  self.bufferDMax.size, 0, ps.PS3000A_RATIO_MODE['PS3000A_RATIO_MODE_NONE'])
+        assert_pico_ok(status)
+
+        overflow = (ctypes.c_int16 * 60)()        
+        status = ps.ps3000aGetValuesBulk(self.chandle, ctypes.byref(self.totalSamples), 0, 0,  0, ps.PS3000A_RATIO_MODE["PS3000A_RATIO_MODE_NONE"] , ctypes.byref(overflow))
+        
+        maxADC = ctypes.c_int16()
+        adc2mVChAMax = adc2mV(self.bufferAMax, self.channel_range, maxADC)
+        adc2mVChBMax = adc2mV(self.bufferBMax, self.ch_range_2, maxADC)
+        adc2mVChDMax = adc2mV(self.bufferDMax, self.ch_range_3, maxADC)
+
+
+        time_sample = np.linspace(0, (self.totalSamples - 1) * self.actualSampleIntervalNs, self.totalSamples)
+
+        ctime = get_cfd_time(time_sample, adc2mVChAMax, 2000,auto_adjust_ped=False, use_rise=True)[0]
+        ntrig = len(ctime)
+
+        montime = get_cfd_time(time_sample, -adc2mVChBMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
+        is_good, is_bad = get_valid(ctime, montime, False)
+        nmon = np.sum(is_good)
+        mon_bad = np.sum(is_bad)*self.mon_lt_good/(1-self.mon_lt_good)
+    
+        rectime = get_cfd_time(time_sample, -adc2mVChDMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
+        is_good, is_bad = get_valid(ctime, rectime, True)
+        nrec = np.sum(is_good)
+        
+        rec_bad = np.sum(is_bad)*self.rec_lt_good/(1-self.rec_lt_good)
+
+        t_total += ntrig
+        mon_total +=nmon 
+        rec_total +=nrec 
+        mon_dark += mon_bad 
+        rec_dark += rec_bad
 
 
     def measure(self, give_waves = False, raw_data=False):
