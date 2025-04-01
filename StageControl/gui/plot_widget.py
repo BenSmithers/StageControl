@@ -112,8 +112,9 @@ class PlotsWidget(QtWidgets.QWidget):
         
         trigger_data = data[1]
         tmask = trigger_data>0
-        receiver_data = -1*np.log(1 - (data[3][tmask]-data[5][tmask])/trigger_data[tmask])
-        monitor_data = -1*np.log(1- (data[2][tmask]-data[4][tmask])/trigger_data[tmask])
+        scale = 24./370
+        receiver_data = -1*np.log(1 - (data[3][tmask]-scale*data[5][tmask])/trigger_data[tmask])
+        monitor_data = -1*np.log(1- (data[2][tmask]-scale*data[4][tmask])/trigger_data[tmask])
 
 
         
@@ -151,6 +152,7 @@ class PlotsWidget(QtWidgets.QWidget):
         self.axes.set_xlim([self._mintime, datetime(self._mintime.year, self._mintime.month, self._mintime.day+dayshift, (self._mintime.hour+4) % 24)])
         self.axes.set_xlabel("Time Stamp", size=14)
         self.axes.set_ylabel(r"Mean $\mu$ Ratio", size=14)
+        self.axes.set_ylim([0, 1.4])
         self.axes.legend()
         self.ui.figure.autofmt_xdate()
         self.ui.canvas.draw()

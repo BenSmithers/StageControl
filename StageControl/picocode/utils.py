@@ -62,12 +62,12 @@ def get_rtime(trigs, hits):
     return tdiffs 
 
 def get_valid(trigs, hits, is_rec):
-    window = 24+1
+    window = 24
     if is_rec:
-        min_time = 104
+        min_time = 100
         max_time = min_time+window
     else:
-        min_time = 8
+        min_time = 4
         max_time = min_time+window
 
 

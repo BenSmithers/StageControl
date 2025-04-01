@@ -152,6 +152,8 @@ class main_window(QMainWindow):
             self.ui.control_widget.ui.gain_button.clicked.connect(self.daq_worker.gain_run)
             self.initialize_daq.connect(self.daq_worker.initialize)
             self.initialize_daq.emit()
+            if self._nopico:
+                self.ui.control_widget.unlock()
             
             
         except Exception as e:

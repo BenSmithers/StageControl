@@ -33,7 +33,7 @@ class DAQWorker(QObject):
         if nopico:
             self._pico = None
         else:
-            self._pico = PicoMeasure()
+            self._pico = PicoMeasure(True)
         
         """
             0 - don't refill
@@ -106,6 +106,8 @@ class DAQWorker(QObject):
                 trig = 0
                 mon = 0
                 rec = 0
+                mon_dark = 0
+                rec_dark =0 
 
             if self._is_striping and self._running:
                 self.data_recieved.emit(self._last_wave, trig, mon, rec, mon_dark, rec_dark)
