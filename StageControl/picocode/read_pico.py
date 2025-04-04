@@ -11,6 +11,7 @@ import time
 from scipy.signal import find_peaks
 from StageControl.picocode.utils import get_valid, get_cfd_time
 import json 
+from picosdk.PicoDeviceEnums import picoEnum
 
 thresh = 10
 bped = -0.55
@@ -143,7 +144,13 @@ class PicoMeasure:
         assert_pico_ok(self.status["setChD"])
         
 
-
+        bw = picoEnum.PICO_BANDWIDTH_LIMITER["PICO_BW_FULL"]
+        self.status["band"] = ps.ps3000aSetBandwidthFilter( self.chandle, ps.PS3000A_CHANNEL['PS3000A_CHANNEL_A'], bw)
+        assert_pico_ok(self.status["band"])
+        self.status["band"] = ps.ps3000aSetBandwidthFilter( self.chandle, ps.PS3000A_CHANNEL['PS3000A_CHANNEL_B'], bw)
+        assert_pico_ok(self.status["band"])
+        self.status["band"] = ps.ps3000aSetBandwidthFilter( self.chandle, ps.PS3000A_CHANNEL['PS3000A_CHANNEL_D'], bw)
+        assert_pico_ok(self.status["band"])
         # Size of capture
         # we want a lot of these. The more the better. Eventually reached diminishing returns 
         if self._block_mode:
