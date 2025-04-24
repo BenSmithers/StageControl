@@ -42,6 +42,10 @@ class Ui_Form(object):
         self.fill_osmosis.setText("Fill with Osmosis")
         #self.fill_osmosis.setEnabled(False)
         self.verticalLayout.addWidget(self.fill_osmosis)
+
+        self.flow_button = QtWidgets.QPushButton(Form)
+        self.flow_button.setText("Start Flow")
+        self.verticalLayout.addWidget(self.flow_button)
         
         self.status_label = QtWidgets.QLabel(Form)
         self.status_label.setObjectName("status_label")

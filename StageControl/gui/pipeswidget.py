@@ -64,6 +64,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.fill_filter.clicked.connect(self.fill_filtered_clicked)
         self.ui.fill_osmosis.clicked.connect(self.fill_osmosis_clicked)
         self.ui.stop_button.clicked.connect(self.stop_button)
+        self.ui.flow_button.clicked.connect(self.start_flowmode)
 
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
@@ -80,7 +81,8 @@ class PipesWidget(QtWidgets.QWidget):
 
         self._fake_chamber = 0
         self._fake_open_tank_lvl = 0
-        
+       
+        self._flow_mode = False 
         self._bleeding_osmo = False 
         self._automated = False
         self._draining = False 
@@ -142,6 +144,25 @@ class PipesWidget(QtWidgets.QWidget):
         else:
             self._obj = open(DFILE, 'a')
 
+    def safestart(self):
+        """
+            Checks if it's safe to start automatic pumping.
+            Panics otherwise 
+        """
+        lvl1 = self.ui.water_lvl1.isChecked()
+        lvl2 = self.ui.water_lvl2.isChecked()
+
+        if (lvl1 and lvl2):
+            self.panic("Trying to start refill - but open tank is full!!")
+
+
+    def start_flowmode(self):
+        self._flow_mode = True 
+        self.safestart()
+        self.disable_all()
+        self.ui.status_label.setText("Continuous Flow")
+        self.ui.stop_button.setEnabled(True)
+
     def start_cycle(self,water_type, frequency):
         """
             Frequency should be in seconds! 
@@ -165,6 +186,7 @@ class PipesWidget(QtWidgets.QWidget):
             self._bleeding_osmo = False
             self._osmo_state_variable = 0
 
+        self.safestart()
 
     def stop_button(self):
         self.ui.status_label.setText("... Awaiting Input")
@@ -190,7 +212,10 @@ class PipesWidget(QtWidgets.QWidget):
         self._filling_filter = False 
         self._filling_tank = False 
         self._filling_osmo = False
+        self._auto_refill_enabled = False 
+        self._cycle_power = False 
         self._overflow_counter = 0
+        self._flow_mode = False
         self._chamber_drain_counter = 0
 
     def drain_button_clicked(self):
@@ -205,7 +230,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.ui.status_label.setText("... DRAINING")
         self.disable_all() # while automatically doing things, we don't want the user tweaking the configuration of the gui
         self.ui.stop_button.setEnabled(True)
-
+        self.safestart()
 
     @pyqtSlot(int, int)
     def start_auto_refill(self, kind, timeout):
@@ -239,6 +264,7 @@ class PipesWidget(QtWidgets.QWidget):
             self.fill_filtered_clicked()
         else:
             self.fill_osmosis_clicked()
+
     def _bleed_osmo(self):
         self._automated = True 
         self._bleeding_osmo = True 
@@ -257,6 +283,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.disable_all()
         self.ui.status_label.setText("... Draining")
         self.ui.stop_button.setEnabled(True)
+        self.safestart()
     def fill_filtered_clicked(self):
         self._automated = True 
         self._draining = True 
@@ -266,6 +293,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.disable_all()
         self.ui.status_label.setText("... DRAINING")
         self.ui.stop_button.setEnabled(True)
+        self.safestart()
 
     def fill_tank_clicked(self):
 
@@ -277,6 +305,7 @@ class PipesWidget(QtWidgets.QWidget):
         self.disable_all()
         self.ui.status_label.setText("... DRAINING")
         self.ui.stop_button.setEnabled(True) 
+        self.safestart()
 
     def flash(self):
         if any(self._alarm):
@@ -660,7 +689,7 @@ class PipesWidget(QtWidgets.QWidget):
                     self.ui.pu1_button.setChecked(False)
                     self.ui.bv6_button.setChecked(False)
             if (time()- self._last_cycle_time)>=self._cycle_freq:
-                if self._cycle_state==2: # we were waiting, now we pump
+                if self._cycle_state==2 and not lvl2: # we were waiting, now we pump
                     self.ui.status_label.setText("Pumping")
                     self._cycle_state=1 
                     self._last_cycle_time = time()
@@ -866,6 +895,17 @@ class PipesWidget(QtWidgets.QWidget):
                                 self.refill_timer.start(self._refill_timeout*60*1000) 
                 else:
                     self._overflow_counter = 0
+        if self._flow_mode:
+            self.ui.sv1_button.setChecked(True)
+            self.ui.sv2_button.setChecked(True)
+            self.ui.bv6_button.setChecked(True)
+        if lvl1 and lvl2:
+            # no pumping if both water levels are showing water! 
+            self.ui.pu1_button.setChecked(False)
+            self.ui.pu2_button.setChecked(False)
+            self.ui.sv2_button.setChecked(False)
+        if lvl2 and (not lvl1):
+            self.panic("Inconsistent Water levels! Open Tank Water Sensor may not be working!")
         if not self._fake: 
             self.update_plot_signal.emit()
 
