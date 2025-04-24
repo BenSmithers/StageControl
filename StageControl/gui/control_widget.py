@@ -56,11 +56,11 @@ class ControlWidget(QtWidgets.QWidget):
         self._led_locations[1] = 7.57
         self._adcs= [
                 720,
-                840,
-                715,
-                610,
-                778,
-                800
+                842,
+                764,
+                632,
+                801,
+                818
                 ]
 
         self._button_timer =  QtCore.QTimer(self)
