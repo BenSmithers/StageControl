@@ -24,10 +24,26 @@ This will start the water quality monitoring GUI.
 # Interventions
 
 ## Water Leak Found
+
+### If the open tank (barrel) is overflowing 
+
+1. Immediately, under "Control" pres "Stop Run"
+2. Ensure all **no** boxes are checked under "Pump Operations." You may need to press "Stop Automation" on this tab, first. 
+
+### If water is leaking near a darkbox
+
 1. Immediately go to the "pump operations" tab and press the button on the top-left "Drain Chamber".
+2. Contact an expert (Ben's CERN phone is on the whtieboard)
 3. Once it is safe to do so, go to the WMS and clean up the spilled water. You may need to move the desy table left (using the LEFT red button) about 10cm. 
 4. Under "Control" press "Stop Run" 
-5. Once the chamber is drained 
+5. Once the chamber is drained, close the valves to WMS 
+
+### Water Leak on the Bench 
+
+1. If the leak is slow, follow the instructions above. 
+2. Otherwise, you may just want to shut the valves to WMS to isolate it, and capture as much of the water as possible to minimize the spill. There is a bucket (and maybe a mop) by the water system fence.
+
+
 
 ## Other Interventions
 
