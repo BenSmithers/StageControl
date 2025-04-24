@@ -371,19 +371,25 @@ class PicoMeasure:
 
         time_sample = np.linspace(0, (self.totalSamples - 1) * self.actualSampleIntervalNs, self.totalSamples)
 
+        t1 = time.time()
         ctime = get_cfd_time(time_sample, adc2mVChAMax, 1000,auto_adjust_ped=False, use_rise=True)[0]
         ntrig = len(ctime)
-
+        
+        t2 = time.time()
         montime = get_cfd_time(time_sample, -adc2mVChBMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
         is_good, is_bad = get_valid(ctime, montime, False)
         nmon = np.sum(is_good)
-        mon_bad = np.sum(is_bad)#*self.mon_lt_good/(1-self.mon_lt_good)
-    
+        #mon_bad = np.sum(is_bad)#*self.mon_lt_good/(1-self.mon_lt_good)
+        mon_bad = np.sum(get_valid(ctime, montime,  False, invalid=True)[0])
+        t3 = time.time()
         rectime = get_cfd_time(time_sample, -adc2mVChDMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
         is_good, is_bad = get_valid(ctime, rectime, True)
         nrec = np.sum(is_good)
-        
-        rec_bad = np.sum(is_bad)# *self.rec_lt_good/(1-self.rec_lt_good)
+        t4 = time.time()
+
+#        print(t2-t1, t3-t2, t4-t3, "seconds")
+        #rec_bad = np.sum(is_bad)# *self.rec_lt_good/(1-self.rec_lt_good)
+        rec_bad = np.sum(get_valid(ctime, rectime, True, invalid=True)[0])
 
         return ntrig, nmon, nrec, mon_bad, rec_bad
 
@@ -502,13 +508,15 @@ class PicoMeasure:
             montime = get_cfd_time(time_sample, -adc2mVChBMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
             is_good, is_bad = get_valid(ctime, montime, False)
             nmon = np.sum(is_good)
-            mon_bad = np.sum(is_bad)*self.mon_lt_good/(1-self.mon_lt_good)
+            #mon_bad = np.sum(is_bad)*self.mon_lt_good/(1-self.mon_lt_good)
+            mon_bad = np.sum(get_valid(ctime, montime,  False, True))
         
             rectime = get_cfd_time(time_sample, -adc2mVChDMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
             is_good, is_bad = get_valid(ctime, rectime, True)
             nrec = np.sum(is_good)
             
-            rec_bad = np.sum(is_bad)*self.rec_lt_good/(1-self.rec_lt_good)
+            #rec_bad = np.sum(is_bad)*self.rec_lt_good/(1-self.rec_lt_good)
+            rec_bad = np.sum(get_valid(ctime, rectime, True, True))
 
             t_total += ntrig
             mon_total +=nmon 
