@@ -15,6 +15,7 @@ from plotgui import Ui_Form as gui
 from StageControl.water.utils import build_bounds, get_fill_times
 
 wavelens = [450, 410, 365, 295, 278, 255]
+baseline = [np.nan, 1.25, 1.065, 0.36, 0.445, 0.314]
 import matplotlib.pyplot as plt 
 def get_color(n, colormax=3.0, cmap="viridis"):
     """
@@ -112,7 +113,7 @@ class PlotsWidget(QtWidgets.QWidget):
         
         trigger_data = data[1]
         tmask = trigger_data>0
-        scale = 24./370
+        scale = 1.0
         receiver_data = -1*np.log(1 - (data[3][tmask]-scale*data[5][tmask])/trigger_data[tmask])
         monitor_data = -1*np.log(1- (data[2][tmask]-scale*data[4][tmask])/trigger_data[tmask])
 
@@ -122,7 +123,9 @@ class PlotsWidget(QtWidgets.QWidget):
         dt_time =  np.array([datetime.fromtimestamp(entry) for entry in data[0][tmask]])
         
         # okay now we need a new one...
-        self._mintime = datetime(dt_time[-1].year, dt_time[-1].month, dt_time[-1].day, (dt_time[-1].hour-2) % 24)
+        pre_shift = int(dt_time[-1].hour<3)
+        mo_shift = int( (dt_time[-1].day<2) and (pre_shift==1) ) # shifting a day back on the first of the month
+        self._mintime = datetime(dt_time[-1].year, dt_time[-1].month-mo_shift, dt_time[-1].day-pre_shift, (dt_time[-1].hour-2) % 24)
 
         fill_mask = data[0][tmask] > int(self._mintime.timestamp())
 
@@ -138,18 +141,19 @@ class PlotsWidget(QtWidgets.QWidget):
                              self._ref_data["mean"][i]+self._ref_data["std"][i],
                              color=get_color(i+1, 8, 'nipy_spectral_r'),label="{} nm".format(wavelens[i]), alpha=0.5, zorder=i)
         
+         #self.axes.set_ylim([0, 1.0])
+        dayshift = int(self._mintime.hour+4 >23)
         
+        lims = [self._mintime, datetime(self._mintime.year, self._mintime.month+mo_shift, self._mintime.day+dayshift, (self._mintime.hour+4) % 24)]
+        self.axes.set_xlim(lims)
 
         for _i in range(5):
             i = _i+1
             wavemask = waveno==i 
-            
-            self.axes.plot(dt_time[fill_mask][wavemask], ratio[wavemask], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), zorder=10+i, marker='d', ls='')
+            self.axes.fill_between(lims, baseline[i]-0.02*baseline[i], baseline[i]+0.02*baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), zorder=i, alpha=0.3)
+            self.axes.plot(dt_time[fill_mask][wavemask], ratio[wavemask], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), marker='d', ls='', zorder=10+i)
 
-        #self.axes.set_ylim([0, 1.0])
-        dayshift = int(self._mintime.hour+4 >23)
-        
-        self.axes.set_xlim([self._mintime, datetime(self._mintime.year, self._mintime.month, self._mintime.day+dayshift, (self._mintime.hour+4) % 24)])
+
         self.axes.set_xlabel("Time Stamp", size=14)
         self.axes.set_ylabel(r"Mean $\mu$ Ratio", size=14)
         self.axes.set_ylim([0, 1.4])
