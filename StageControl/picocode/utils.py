@@ -61,6 +61,7 @@ def get_rtime(trigs, hits):
 
     return tdiffs 
 
+
 def get_valid(trigs, hits, is_rec, invalid=False):
     window = 24
     if invalid:
@@ -68,36 +69,15 @@ def get_valid(trigs, hits, is_rec, invalid=False):
     else:
         shift = 0
     if is_rec:
-        min_time = 100+shift
+        min_time = 104+shift
         max_time = min_time+window
     else:
-        min_time = 4+shift
+        min_time = 12+shift
         max_time = min_time+window
 
-
-    is_valid = np.zeros_like(hits)
-    is_valid = is_valid.astype(bool)    
-    hit_index = 0
-    for i in range(len(trigs)):
-        while hits[hit_index]<=(trigs[i]+max_time):
-
-            # now the hit_index is the hit just after the trig we're on
-            dif = hits[hit_index] - trigs[i]
-            if dif>=min_time and dif<=max_time:
-                is_valid[hit_index] = True
-                hit_index +=1
-            else:
-                is_valid[hit_index] = False or is_valid[hit_index]
-
-            hit_index+=1
-            if hit_index>=(len(hits)-1):
-                break
-        if hit_index>=(len(hits)-1):
-            break
-    
-
-    return is_valid, np.logical_not(is_valid)
-
+    hit_trig_time = hits - trigs[np.digitize(hits, trigs)-1]
+    good = np.logical_and( hit_trig_time>min_time, hit_trig_time<max_time)
+    return good, np.logical_not(good)
 
 class ReturnType(Enum):
     PulseCount = 0
