@@ -356,15 +356,23 @@ class ControlWidget(QtWidgets.QWidget):
         self._stage_done = False
         self._adc_done = False 
 
-        self.ui.waveCombo.setCurrentIndex(index_no)
-        # LOOK UP ADC VALUE 
-#        new_adc = 1
-        new_adc = self._adcs[index_no]
-        self.ui.adc_spin.setValue(new_adc)
-        self.set_adc()
-        # we need to emit the signals to tell the USB worker thread to move stuff
-        self.go_wavelen()
-        
+        if index_no == -1: 
+            # we pretty much must bypass everything here... 
+            # here we may decouple the GUI from the actual board, maybe? 
+            # this will get these LEDs totally out of alignment and at the lowest ADC possible
+            self.adc_signal.emit(1023)
+            self.move_signal.emit(15)
+            self.led_signal.emit(6)
+        else:
+            self.ui.waveCombo.setCurrentIndex(index_no)
+            # LOOK UP ADC VALUE 
+    #        new_adc = 1
+            new_adc = self._adcs[index_no]
+            self.ui.adc_spin.setValue(new_adc)
+            self.set_adc()
+            # we need to emit the signals to tell the USB worker thread to move stuff
+            self.go_wavelen()
+            
         # emit some signals
 
     @pyqtSlot(dict)
