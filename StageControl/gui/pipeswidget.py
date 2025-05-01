@@ -92,6 +92,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._draining_open_tank = False
         self._overflow_counter = 0
         self._chamber_drain_counter = 0
+        self._leveltime = -1
         
         """
             0 - Pressurizing System
@@ -900,10 +901,17 @@ class PipesWidget(QtWidgets.QWidget):
             self.ui.sv2_button.setChecked(True)
             self.ui.bv6_button.setChecked(True)
         if lvl1 and lvl2:
-            # no pumping if both water levels are showing water! 
-            self.ui.pu1_button.setChecked(False)
-            self.ui.pu2_button.setChecked(False)
-            self.ui.sv2_button.setChecked(False)
+            # there's a 30 second grace period 
+            if self._leveltime==-1:
+                self._leveltime = time() 
+            else:
+                if (time()-self._leveltime)>30:
+                    # no pumping if both water levels are showing water! 
+                    self.ui.pu1_button.setChecked(False)
+                    self.ui.pu2_button.setChecked(False)
+                    self.ui.sv2_button.setChecked(False)
+        else:
+            self._leveltime = -1
         if lvl2 and (not lvl1):
             self.panic("Inconsistent Water levels! Open Tank Water Sensor may not be working!")
         if not self._fake: 

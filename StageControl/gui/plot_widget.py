@@ -15,7 +15,7 @@ from plotgui import Ui_Form as gui
 from StageControl.water.utils import build_bounds, get_fill_times
 
 wavelens = [450, 410, 365, 295, 278, 255]
-baseline = [np.nan, 1.25, 1.065, 0.36, 0.445, 0.314]
+baseline = [np.nan, 1.2548, 0.82710, 0.336267, 0.283956677, 0.2406189]
 import matplotlib.pyplot as plt 
 def get_color(n, colormax=3.0, cmap="viridis"):
     """
@@ -114,8 +114,8 @@ class PlotsWidget(QtWidgets.QWidget):
         trigger_data = data[1]
         tmask = trigger_data>0
         scale = 1.0
-        receiver_data = -1*np.log(1 - (data[3][tmask]-scale*data[5][tmask])/trigger_data[tmask])
-        monitor_data = -1*np.log(1- (data[2][tmask]-scale*data[4][tmask])/trigger_data[tmask])
+        receiver_data = -1*np.log(1 - (data[3][tmask]-0.75*data[5][tmask])/trigger_data[tmask])
+        monitor_data = -1*np.log(1- (data[2][tmask]-0.5*data[4][tmask])/trigger_data[tmask])
 
 
         
@@ -150,13 +150,13 @@ class PlotsWidget(QtWidgets.QWidget):
         for _i in range(5):
             i = _i+1
             wavemask = waveno==i 
-            self.axes.fill_between(lims, baseline[i]-0.02*baseline[i], baseline[i]+0.02*baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), zorder=i, alpha=0.3)
-            self.axes.plot(dt_time[fill_mask][wavemask], ratio[wavemask], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), marker='d', ls='', zorder=10+i)
+#            self.axes.fill_between(lims, baseline[i]-0.02*baseline[i], baseline[i]+0.02*baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), zorder=i, alpha=0.3)
+            self.axes.plot(dt_time[fill_mask][wavemask], (ratio[wavemask] - baseline[i])/baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), marker='d', ls='', zorder=10+i)
 
-
+        self.axes.hlines([-0.03, 0.03], lims[0], lims[1], color='red', ls='--')
         self.axes.set_xlabel("Time Stamp", size=14)
-        self.axes.set_ylabel(r"Mean $\mu$ Ratio", size=14)
-        self.axes.set_ylim([0, 1.4])
+        self.axes.set_ylabel(r"Fractional Deviation", size=14)
+        self.axes.set_ylim([-0.10, 0.10])
         self.axes.legend()
         self.ui.figure.autofmt_xdate()
         self.ui.canvas.draw()
