@@ -5,7 +5,17 @@ If there is no terminal open, press `Ctrl+Alt+T` to launch one.
 Then, execute the `launch.sh` bash script. 
 This will start the water quality monitoring GUI. 
 
-1. [Interventions](#Interventions)
+1. [Starting Data Taking](#starting-data-taking)
+
+    a. [Continuous Flow Monitoring](#continuous-flow-monitoring)
+
+    b. [Regular Refill Monitoring](#regular-refill-monitoring)
+
+    c. [No Flow Refill Monitoring](#no-flow-monitoring)
+
+2. [Shift Checks](#shift-checks)
+
+2. [Interventions](#Interventions)
 
     a. [Water Leak Found](#water-leak-found)
 
@@ -15,40 +25,87 @@ This will start the water quality monitoring GUI.
 
     d. [Bleeding Osmosis Pressure](#bleeding-osmosis-pressure)
 
-2. [Taking Data](#taking-data)
 
-    a. [Continuous Flow Monitoring](#continuous-flow-monitoring)
 
-    b. [Regular Refill Monitoring](#regular-refill-monitoring)
+# Starting Data Taking
 
-    c. [No Flow Refill Monitoring](#no-flow-monitoring)
+For each of these, an important first step is to ensure the LED flasher board is on and flashing. 
+
+1. Launch the gui using `python launch.py` and wait a few seconds for everything to start up. Make sure you are on the “Control” tab, and you should see a few messages relating to picoscope initialization, usb initialization, and a message saying “starting wms_main”.
+2. Choose the 410nm LED, press the "Go!" button beside it.
+3. Press the "Set ADC" button; the value is not important. 
+4. From the Flash Rate drop-down menu, choose "8MHz".
+5. Click "Rotate Wavelengths?" and ensure a checkmark appears beside it.
+
+![led on](readme_images/ledon.png "LEDs On")
+
+6. Press "Start Run". Note the present run number.
+    -  You can optionally lower the run number by one _before starting_ to append the data to the previous run. 
+7. Go to the “Pump Operations” tab, and press “Start Flow”. You should see Flow 1 and 2 fill up after a moment. If the test chamber was already full, Flow 3 should also fill up.
+8. After a few minutes, there should now be a new data file for the new run.
+9. Go to the “Plots” tab. Click on the line with a full filepath already present, and select the filename with the run number you saw in step 6.
+
+
+
+## Filling or Draining the water chamber
+Navigate to the `Pump Operations` tab, when there you should see a picture of the water filtration layout. 
+In general, you should *only* need to use the automated buttons at most! 
+Do not manually turn valves or pumps on unless you know what you are doing. 
+The buttons:
+
+ - Drain Chamber: drains the chamber
+ - Fill with Supply Water: drains the chamber, then fills with water from the supply line
+ - Fill with Return Water: drains the chamber, then fills with water from the return line. Also known as tank water
+ - Fill with Osmosis: drains the chamber, then fills with reverse osmosis water. This takes about 45 minutes. You may see it periodically pressurizing the RO pressure vessel, waiting as the RO tank fills, and then waiting as the RO tank fills the chamber. It'll swap between these frequently. 
+
+
+# Shift Checks
+
+## Pure Water or Gd
+
+- Is the WMS Remote Desktop window open? If not, please open it on any of the machines with a remote desktop app (the water pc, for instance)
+    - Connectio ninformation is on the whiteboard! 
+- Is the WMS plot updating? If the data are more than about fifteen minutes old then
+    - Check the "Control" tab. Are the data-taking messages there up to date? - If they are not, please notify me on slack (@bsmithers) and post in the shift channel.
+- Are the pressures under the "Pump Operations" tab updating every ~5 seconds? 
+    - If not you should try to close the WMS Control System, open the terminal window, and re-launch `python launch.py`. Then post in the #water channel and @bsmithers. See [Starting Data Taking](#starting-data-taking) for the starting procedure. 
+- Write how long ago the last “Pump Off” event happened. These are shown as vertical gray lines; you may need to scroll a few hours back in time on the plot. These typically happen every 2-4 hours.
+    - Following a “Pump Off” event, the monitoring data will be unreliable for approximately 20 minutes. This is expected behavior!
+    - The stamps are read as "$day $hour:$minute"
+- If the last “pump off” event was more than five hours ago – check the water level in the WMS open tank using the reolink camera.
+    - Check the water level in the WMS open tank using the reolink camera. It is visible as a slightly darker portion of the open tank (see the second image), and may be quite hard to see (consider raising the camera resolution).
+    - The water level should be between the lower two of the wires entering the side of WMS. If it is well above level sensor 2 (see first image) – this is a major problem. See [Urgent Problems](#urgent-problems) below. The water level may appear close to or just above level sensor 2 - this is typical.
+    - Check the “Flow” indicators on the “Pump Operations” page. If flow 1 is 0% but “Pump 1” is checked, this is an indication that either the WMS input pump has died or that the WCTE flow has been interrupted. See [Urgent Problems](#urgent-problems) below
+- Check the plot on the "Plots" tab. Are any trends below the 3% mark (lower red dashed line)?
+    - If this happens within 20 minutes of a “Pump Off”, this expected behavior. Not a problem.
+    - If this happens more than 20-30 minutes after a “Pump Off”, this may indicate a problem! Post screenshots of the plot and the "Pump Operations" tab in the shift channel and @bsmithers. If this is during Gd loading, it may indicate a more serious Gd-related problem and you should tell those involved with the loading.
+
+![Water Levels](readme_images/open_tank_annot.png "Open Tank Annotated")
+![Filling Open Tank](readme_images/filling_open_tank.png "Filling Open Tank")
+
+
+## Gd-Specific
+
+### During the ixing
+- Checks of the plot should be done much more frequently; ideally every ~15-20 minutes in the hours following the addition of the Gd.
+- It would be best if Gd is only be added if the last "pump off" event was within the last two hours. We do not want to risk the "pump off" happening automatically just after the addition of G; we could loose monitoring for ~20 minutes during a critical moment.
+
+### Forcing a "Pump off" moment
+
+1. Press “Stop Automation”
+2. Manually enable “Pump 3”: the box can be checked (and pump enabled) by clicking on it. 
+3. Wait approximately 7 minutes. Pump 3 will automatically disable itself when “Water level 1” is no longer checked (meaning the open tank is empty)
+4. Press “Start Flow.” You should see pump 1 enable along with a few solenoid valves. 5. After a few seconds flow will be visible in Flowmeters 1, 2, and 3. Flowmeter 5 will show flow a few more seconds later.
+
+ 
 
 # Interventions
 
-## Fractional Deviation Exceeds Bounds
+## Urgent Problems
 
-In this case, check  the following in order. 
+In the event of a WMS emergency, you should navigate to the “Pump Operations” page and press “Stop Automation”. All flow, except maybe Flow 5, should read 0%. Post in the shift and water channel, @bsmithers (me) on slack, and email me at
 
-### Did the main WCTE pumps stop? 
-
-If the WCTE water system pumps alarms tripped and the flow stopped, this is an expected behavior.
-Dirty water likely fell from the overflow line into the water as the pressure dropped. 
-Make a note in the shift log. 
-
-### Did the WMS pumps stop? 
-Check the `Control` tab, and scroll up to the point in time where the spike occurred. 
-If you see a line labeled `sv2 off signal sent`, this indicates that the WMS shut off flow intentionally. 
-Email Ben at `bsmithers@triumf.ca` describing when this happened, if there was a subsequent `sv2 on signal sent`, and the status of the `Flow` meters and the `Water Level` checkboxes on the `Pump Operations` tab.
-
-### No pumps stopped
-
-If it's just a singular point outside the 3% bounds, this may be a stastistical fluke. 
-
-If multiple subsequent points show a deviation outside the marked bounds, and water flow has been continuous and uninterrupted, this may indicate a water quality issue! 
-You should post in the @water and @gad channels on slack.
-We will want to check if this is observed both in WMS and in GAD. 
-
-If Gd loading is ongoing, noitfy Gd experts (eg Patrick) right away. 
+Include screenshots of the Pump Operations and  "Plots" page, along with a picture of the open tank.
 
 ## Water Leak Found
 
@@ -74,85 +131,12 @@ If Gd loading is ongoing, noitfy Gd experts (eg Patrick) right away.
 
 ## Other Interventions
 
-### Bleeding Osmosis Pressure. 
-
-# Taking Data
-
-For each of these, an important first step is to ensure the LED flasher board is on and flashing. 
-
-1. Choose the 410nm LED, press the "Go!" button beside it.
-2. Press the "Set ADC" button; the value is not important. 
-3. From the Flash Rate drop-down menu, choose "8MHz".
-4. Choose the desired water type in the box below the board location, and then press "Update Filename"
-5. Generally, the "Rotate Wavelengths?" button should be checked. Leave it unchecked only for data where just a specific wavelength is needed at high precision. See [One-LED Runs](#one-led-runs).
-
-![led on](readme_images/ledon.png "LEDs On")
-
-## Regular Refill Monitoring
-
-**This may not work for RO water anymore.**
-
-6. Select "Auto Refill?" You may need to de-select "Circulate Water?" if it is already checked. The GUI will not allow you to choose both. 
-7. Choose a refill period, usually 60-90 minutes is good, and select the type of water to refill the chamber with. 
-8. Press "Start Run." The WMS will automatically drain and fill the chamber, then repeat the refill at the selected frequency. Note the run number, and add it to the WMS runs spreadsheet. 
-9. After a few data points have been taken, you will be able to view them. Under "Plots", you can click the top of the two white bars at the foot of the window. This will open a file browser: select the file whose run number is associated with the one just started. 
-
-## Continuous Flow Monitoring
-
-6. You will first need to fill the chamber with the appropriate water. Under the "Pump Operations" tab, choose the "Fill with..." button associated with the water type you would like to fill the chamber with. **If you are doing RO water, you will first need to fill the chamber with supply water**.
-7. Now, back on the control tab, select "Circulate Water?" 
-8. Choose a "Toggle Frequency" in minutes. Pumps will run for one minute, then wait for the chosen amount of minutes before running again. 3-5 minutes is good
-9. Ensure you have selected the correct "Circulate With" water type. 
-10. Press "Start Run"
-11. See step 9, in [Regular Refill Monitoring](#regular-refill-monitoring)
-
-## No Flow Monitoring 
-
-6. Ensure no run is currently running. 
-Follow step 6 in [Continuous Flow Monitoring](#continuous-flow-monitoring). 
-7. Ensure "Auto Refill" and "Circulate Water" areboth unchecked.
-8. See step 9, in [Regular Refill Monitoring](#regular-refill-monitoring)
-
-
-
-## Other Data Taking Modes
-
-### One-LED Runs
-
-1. Choose the desired LED frequency from the drop-down menu at the top. Press "Go!" beside the drop down menu.
-2. Select an appropriate ADC to get ~0.3 counts per pulse. Try just getting one from this table 
-
-| nm  | ADC |
-|-----|-----|
-| 450 | 720 |
-| 410 | 840 |
-| 365 | 715 |
-| 295 | 610 |
-| 278 | 778 |
-| 255 | 800 |
-
-3. Select the MHz flash rate from the "Flash Rate" drop-down menu.
-4. Choose which water type is present in the water drop down menu, beside the "Update Filename" button.
-5. Make sure "Rotate Wavelengths?" is unchecked. 
-
-
-## Filling or Draining the water chamber
-Navigate to the `Pump Operations` tab, when there you should see a picture of the water filtration layout. 
-In general, you should *only* need to use the automated buttons at most! 
-Do not manually turn valves or pumps on unless you know what you are doing. 
-The buttons:
-
- - Drain Chamber: drains the chamber
- - Fill with Supply Water: drains the chamber, then fills with water from the supply line
- - Fill with Return Water: drains the chamber, then fills with water from the return line. Also known as tank water
- - Fill with Osmosis: drains the chamber, then fills with reverse osmosis water. This takes about 45 minutes. You may see it periodically pressurizing the RO pressure vessel, waiting as the RO tank fills, and then waiting as the RO tank fills the chamber. It'll swap between these frequently. 
-
 # What to do when... 
 
 ## Air keeps getting pumped into the return line. 
 
 This happens when there is no water in the open tank (the white plastic drum), but the return pump keeps running (a relatively quiet pump). 
-If this keeps happening, turn the WMS cabinet off (you will see the green lights turn off), and contact the experts (Ben Smithers - bsmithers@triumf.ca - CERN Phone 69399).
+If this keeps happening, turn the WMS cabinet off (you will see the green lights turn off), and contact the experts.
 
 ## Major Leak is found
 
