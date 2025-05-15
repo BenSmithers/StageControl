@@ -29,12 +29,12 @@ class Ui_Form(object):
         self.verticalLayout.addWidget(self.drain_button)
 
         self.fill_filter = QtWidgets.QPushButton(Form)
-        self.fill_filter.setText("Fill with Supply Wayer")
+        self.fill_filter.setText("Fill with Return Wayer")
         #self.fill_filter.setEnabled(False)
         self.verticalLayout.addWidget(self.fill_filter)
 
         self.fill_return = QtWidgets.QPushButton(Form)
-        self.fill_return.setText("Fill with Return Water")
+        self.fill_return.setText("Fill with Supply Water")
         #self.fill_filter.setEnabled(False)
         self.verticalLayout.addWidget(self.fill_return)
 
@@ -259,7 +259,7 @@ class Ui_Form(object):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
         self.label.setText(_translate("Form", "Ball Valves"))
-        self.bv1_button.setText(_translate("Form", "BV1 (Tank Water)"))
+        self.bv1_button.setText(_translate("Form", "BV1 (Supply Water)"))
         self.bv2_button.setText(_translate("Form", "BV2 (Filters)"))
         self.bv3_button.setText(_translate("Form", "BV3 (UV Lamp)"))
         self.bv4_button.setText(_translate("Form", "BV4 (Ion Filter)"))

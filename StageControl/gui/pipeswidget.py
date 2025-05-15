@@ -82,6 +82,7 @@ class PipesWidget(QtWidgets.QWidget):
         self._fake_chamber = 0
         self._fake_open_tank_lvl = 0
        
+        self._wait = False 
         self._flow_mode = False 
         self._bleeding_osmo = False 
         self._automated = False
@@ -584,9 +585,11 @@ class PipesWidget(QtWidgets.QWidget):
         lvl2 = self.ui.water_lvl2.isChecked()
        
         if lvl2:
+            self._wait = True 
             self._draining_open_tank = True
             self.ui.pu3_button.setChecked(self._draining_open_tank)
         if not lvl1:
+            self._wait = False 
             self._draining_open_tank = False 
             self.ui.pu3_button.setChecked(self._draining_open_tank)
 
@@ -679,7 +682,7 @@ class PipesWidget(QtWidgets.QWidget):
                 self.ui.bv1_button.setChecked(self._cycle_water==0)
                 self.ui.pu1_button.setChecked(True)
                 self.ui.bv6_button.setChecked(True)
-            if (time()- self._last_cycle_time)>=60: # only ever pump for a minute
+            if lvl2: # only ever pump for a minute
                 if self._cycle_state==1: # we were pumping, now we wait
                     self.ui.status_label.setText("Waiting")
                     self._cycle_state=2
@@ -689,7 +692,7 @@ class PipesWidget(QtWidgets.QWidget):
                     self.ui.bv1_button.setChecked(False)
                     self.ui.pu1_button.setChecked(False)
                     self.ui.bv6_button.setChecked(False)
-            if (time()- self._last_cycle_time)>=self._cycle_freq:
+            if not lvl1:
                 if self._cycle_state==2 and not lvl2: # we were waiting, now we pump
                     self.ui.status_label.setText("Pumping")
                     self._cycle_state=1 
@@ -897,9 +900,14 @@ class PipesWidget(QtWidgets.QWidget):
                 else:
                     self._overflow_counter = 0
         if self._flow_mode:
-            self.ui.sv1_button.setChecked(True)
-            self.ui.sv2_button.setChecked(True)
-            self.ui.bv6_button.setChecked(True)
+            if lvl1:
+                self.ui.pu3_button.setChecked(True)
+            if not self._wait:
+                # wait to resume flow until the open tank is drained
+                self.ui.pu1_button.setChecked(True)
+                self.ui.sv1_button.setChecked(True)
+                self.ui.sv2_button.setChecked(True)
+                self.ui.bv6_button.setChecked(True)
         if lvl1 and lvl2:
             # there's a 30 second grace period 
             if self._leveltime==-1:
@@ -910,6 +918,7 @@ class PipesWidget(QtWidgets.QWidget):
                     self.ui.pu1_button.setChecked(False)
                     self.ui.pu2_button.setChecked(False)
                     self.ui.sv2_button.setChecked(False)
+                    self._wait = True 
         else:
             self._leveltime = -1
         if lvl2 and (not lvl1):

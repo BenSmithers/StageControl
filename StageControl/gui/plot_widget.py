@@ -13,9 +13,11 @@ from datetime import datetime
 from plotgui import Ui_Form as gui 
 
 from StageControl.water.utils import build_bounds, get_fill_times
-
+from utils import get_event_time 
 wavelens = [450, 410, 365, 295, 278, 255]
 baseline = [np.nan, 1.2548, 0.82710, 0.336267, 0.283956677, 0.2406189]
+baseline = [np.nan, 1.17566, 0.7802, 0.3149, 0.266777, 0.2183807]
+baseline = [np.nan, 1.1820821, 0.7887177, 0.3253037, 0.279768, 2344264]
 import matplotlib.pyplot as plt 
 def get_color(n, colormax=3.0, cmap="viridis"):
     """
@@ -126,13 +128,15 @@ class PlotsWidget(QtWidgets.QWidget):
         pre_shift = int(dt_time[-1].hour<3)
         mo_shift = int( (dt_time[-1].day<2) and (pre_shift==1) ) # shifting a day back on the first of the month
         self._mintime = datetime(dt_time[-1].year, dt_time[-1].month-mo_shift, dt_time[-1].day-pre_shift, (dt_time[-1].hour-2) % 24)
-
-        fill_mask = data[0][tmask] > int(self._mintime.timestamp())
+        othermin = datetime(2020, 1, 1, 1)
+        fill_mask = data[0][tmask] > int(othermin.timestamp())
 
         ratio = (receiver_data/monitor_data)[fill_mask]
 
         waveno =  data[7][tmask][fill_mask]
         
+        puoff_time = get_event_time(data[0], "pu1 off signal sent")
+        puoff_time = [datetime.fromtimestamp(entry) for entry in puoff_time]
         for _i in range(len(self._ref_data["mean"])):
             i = _i+1
             break
@@ -152,7 +156,8 @@ class PlotsWidget(QtWidgets.QWidget):
             wavemask = waveno==i 
 #            self.axes.fill_between(lims, baseline[i]-0.02*baseline[i], baseline[i]+0.02*baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), zorder=i, alpha=0.3)
             self.axes.plot(dt_time[fill_mask][wavemask], (ratio[wavemask] - baseline[i])/baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), marker='d', ls='', zorder=10+i)
-
+        
+        self.axes.vlines(puoff_time, -0.1, 0.1, color='gray', alpha=0.5, ls='--',label="Pump Off Time")
         self.axes.hlines([-0.03, 0.03], lims[0], lims[1], color='red', ls='--')
         self.axes.set_xlabel("Time Stamp", size=14)
         self.axes.set_ylabel(r"Fractional Deviation", size=14)
