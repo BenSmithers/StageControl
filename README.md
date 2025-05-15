@@ -7,12 +7,6 @@ This will start the water quality monitoring GUI.
 
 1. [Starting Data Taking](#starting-data-taking)
 
-    a. [Continuous Flow Monitoring](#continuous-flow-monitoring)
-
-    b. [Regular Refill Monitoring](#regular-refill-monitoring)
-
-    c. [No Flow Refill Monitoring](#no-flow-monitoring)
-
 2. [Shift Checks](#shift-checks)
 
 2. [Interventions](#Interventions)
