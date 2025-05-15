@@ -5,32 +5,36 @@ import time
 from utils import get_rtime, get_valid, get_cfd_time
 import matplotlib.pyplot as plt 
 print("Initializing")
+plt.style.use("wms.mplstyle")
+
 counter = 0
 
+test = PicoMeasure(True)
 keepon = False
 onct = 1
-while True:
-    if not keepon:
-        test = PicoMeasure(True)
+mon_run = None
+rec_run = None
+for i in range(30):
 
-    od = test.calibrate(True)
-    keepon = False # sum(od["rec"][60:])>500 or keepon 
-    if keepon:
-        onct +=1 
+    od = test.calibrate(False)
+   
+    if mon_run is None:
+        mon_run =np.array( od["monitor"])
+        rec_run = np.array(od["rec"])
+    else:
+        mon_run = mon_run + np.array(od["monitor"])
+        rec_run = rec_run + np.array(od["rec"])
     
-    if True: # onct%100==0:
-        plt.clf()
-        plt.stairs(od["monitor"], od["bins"],label="Mon")
-        plt.stairs(od["rec"], od["bins"],label="Rec")
-        plt.yscale('log')
-    #    plt.ylim([1e1, 5e5])
-        plt.xlim([0, 200])
-    #    plt.vlines([8,], 1e1, 1e5, color='gray')
-        plt.legend()
-        plt.show()
-    
-#    plt.savefig("stupid_plots/test_{}_amp.png".format(counter),dpi=400)
-    counter +=1
-    if not keepon:
-        test.close()
-    #plt.show()
+
+plt.clf()
+
+plt.stairs(rec_run, od["bins"],label="Receiver")
+plt.stairs(mon_run,  od["bins"],label="Monitor")
+plt.xlabel("Pulse Height [ADC]")
+plt.yscale('log')
+plt.xlim([0, 200])
+plt.legend()
+plt.tight_layout()
+plt.savefig("./plots/gain.png")
+plt.show()
+

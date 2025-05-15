@@ -281,11 +281,15 @@ class PicoMeasure:
             crossings = np.where(crossings)[0]
 
             window = int(370 / self.actualSampleIntervalNs)
+            skip = 0 # 42  int(0.6*window)
+            
             mon_peaks = []
             rec_peaks = []
             for ic in crossings:
-                mon_peaks.append(-1*np.min(chanb[ic:ic+window]))
-                rec_peaks.append(-1*np.min(chand[ic:ic+window]))
+                if len(chanb[ic+skip:ic+window])==0:
+                    continue
+                mon_peaks.append(-1*np.min(chanb[ic+skip:ic+window]))
+                rec_peaks.append(-1*np.min(chand[ic+skip:ic+window]))
 
     
         mon_data = np.histogram(mon_peaks, bins)[0]
