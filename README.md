@@ -8,10 +8,12 @@ This will start the water quality monitoring GUI.
 1. [Interventions](#Interventions)
 
     a. [Water Leak Found](#water-leak-found)
-    
-    b. [Other Interventions](#other-interventions)
 
-    c. [Bleeding Osmosis Pressure](#bleeding-osmosis-pressure)
+    b. [Fractional Deviation Exceeds Bounds](#fractional-deviation-exceeds-bounds)
+    
+    c. [Other Interventions](#other-interventions)
+
+    d. [Bleeding Osmosis Pressure](#bleeding-osmosis-pressure)
 
 2. [Taking Data](#taking-data)
 
@@ -22,6 +24,31 @@ This will start the water quality monitoring GUI.
     c. [No Flow Refill Monitoring](#no-flow-monitoring)
 
 # Interventions
+
+## Fractional Deviation Exceeds Bounds
+
+In this case, check  the following in order. 
+
+### Did the main WCTE pumps stop? 
+
+If the WCTE water system pumps alarms tripped and the flow stopped, this is an expected behavior.
+Dirty water likely fell from the overflow line into the water as the pressure dropped. 
+Make a note in the shift log. 
+
+### Did the WMS pumps stop? 
+Check the `Control` tab, and scroll up to the point in time where the spike occurred. 
+If you see a line labeled `sv2 off signal sent`, this indicates that the WMS shut off flow intentionally. 
+Email Ben at `bsmithers@triumf.ca` describing when this happened, if there was a subsequent `sv2 on signal sent`, and the status of the `Flow` meters and the `Water Level` checkboxes on the `Pump Operations` tab.
+
+### No pumps stopped
+
+If it's just a singular point outside the 3% bounds, this may be a stastistical fluke. 
+
+If multiple subsequent points show a deviation outside the marked bounds, and water flow has been continuous and uninterrupted, this may indicate a water quality issue! 
+You should post in the @water and @gad channels on slack.
+We will want to check if this is observed both in WMS and in GAD. 
+
+If Gd loading is ongoing, noitfy Gd experts (eg Patrick) right away. 
 
 ## Water Leak Found
 
