@@ -15,9 +15,11 @@ This will start the water quality monitoring GUI.
 
     b. [Fractional Deviation Exceeds Bounds](#fractional-deviation-exceeds-bounds)
     
-    c. [Other Interventions](#other-interventions)
+    c. Pumps Shutdown because there's no flow
 
-    d. [Bleeding Osmosis Pressure](#bleeding-osmosis-pressure)
+    d. [Other Interventions](#other-interventions)
+
+    e. [Bleeding Osmosis Pressure](#bleeding-osmosis-pressure)
 
 
 
@@ -121,7 +123,20 @@ Include screenshots of the Pump Operations and  "Plots" page, along with a pictu
 1. If the leak is slow, follow the instructions above. 
 2. Otherwise, you may just want to shut the valves to WMS to isolate it, and capture as much of the water as possible to minimize the spill. There is a bucket (and maybe a mop) by the water system fence.
 
+## Pump Shutdown
 
+### Simultaneous ToolDAQ Alarm
+
+This is likely because the main water system stopped. 
+If there was an associated ToolDAQ Water system alarm, address that first. 
+Once the main water pump is restarted, then you can go to the WMS window, and press "Start Flow" under the "Pump Operations" tab.
+
+### No other associated problem
+
+It may have been a fluke. 
+First try restarting the WMS automated pumping by pressing "Start Flow" under the "Pump Operations" tab. 
+If this works, good! 
+If after 15-20 minutes the same error occurs, you should post in the shift channel and @bsmithers on slack. 
 
 ## Other Interventions
 
