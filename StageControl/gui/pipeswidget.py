@@ -94,6 +94,8 @@ class PipesWidget(QtWidgets.QWidget):
         self._overflow_counter = 0
         self._chamber_drain_counter = 0
         self._leveltime = -1
+        self._noflotime = -1
+        self._flow4time = -1
         
         """
             0 - Pressurizing System
@@ -921,6 +923,27 @@ class PipesWidget(QtWidgets.QWidget):
                     self._wait = True 
         else:
             self._leveltime = -1
+        if self.ui.pu1_button.isChecked() and (not flows[0]):
+            # pump on but no flow 
+            if self._noflotime == -1:
+                self._noflotime = time() 
+            else:
+                if (time()-self._noflotime)>15:
+                    self.ui.pu1_button.setChecked(False)
+                    self.stop_button()
+                    self.panic("Pump 1 on but water isn't flowing!")
+        else:
+            self._noflotime = -1
+        if self.ui.pu3_button.isChecked() and (not flows[4]):
+            if self._flow4time==-1:
+                self._flow4time = time()
+            else:
+                if (time() - self._flow4time)>15:
+                    self.ui.pu3_button.setChecked(False)
+                    self.stop_button()
+                    self.panic("Return Pump on but water isn't flowing!")
+        else:
+            self._flow4time = -1
         if lvl2 and (not lvl1):
             self.panic("Inconsistent Water levels! Open Tank Water Sensor may not be working!")
         if not self._fake: 
