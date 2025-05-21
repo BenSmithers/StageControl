@@ -112,7 +112,10 @@ class Ui_Form(object):
         self.toolbar = NavigationToolbar(self.canvas, Form)
         self.toolbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
         self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
-
+        self.zoombut = QtWidgets.QCheckBox(Form)
+        self.zoombut.setObjectName("zoombut")
+        self.zoombut.setText("Auto Zoom")
+        self.zoombut.setChecked(True)
         #self.verticalLayout.addWidget(self.toolbar)
 
         self.new_vert = QtWidgets.QVBoxLayout()
@@ -120,6 +123,7 @@ class Ui_Form(object):
 
         self.new_vert.addWidget(self.canvas)
         self.new_vert.addWidget(self.toolbar)
+        self.new_vert.addWidget(self.zoombut)
         self.horizontalLayout.addLayout(self.new_vert)
         
 

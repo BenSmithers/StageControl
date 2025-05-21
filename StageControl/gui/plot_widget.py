@@ -17,7 +17,7 @@ from utils import get_event_time
 wavelens = [450, 410, 365, 295, 278, 255]
 baseline = [np.nan, 1.2548, 0.82710, 0.336267, 0.283956677, 0.2406189]
 baseline = [np.nan, 1.17566, 0.7802, 0.3149, 0.266777, 0.2183807]
-baseline = [np.nan, 1.1820821, 0.7887177, 0.3253037, 0.279768, 2344264]
+baseline = [np.nan, 1.1820821, 0.7887177, 0.3253037, 0.279768, 0.2285]
 import matplotlib.pyplot as plt 
 def get_color(n, colormax=3.0, cmap="viridis"):
     """
@@ -41,6 +41,8 @@ class PlotsWidget(QtWidgets.QWidget):
         self._warned=False
         self._oldname=self._filepath 
 
+        self._firstpt = True
+        self._putimes = -1
         self._mintime = datetime(1980,1, 1, 1, 1)
 
         if False:
@@ -97,7 +99,12 @@ class PlotsWidget(QtWidgets.QWidget):
             Show only what is requested
         
         """
+        if not (self._firstpt):
+            oldx = self.axes.get_xlim()
+            oldy = self.axes.get_ylim()
         self.ui.figure.clear()
+
+
         if self._oldname != self._filepath:
             self._warned = False 
             self._oldname = self._filepath
@@ -132,6 +139,7 @@ class PlotsWidget(QtWidgets.QWidget):
         fill_mask = data[0][tmask] > int(othermin.timestamp())
 
         ratio = (receiver_data/monitor_data)[fill_mask]
+        ratio = np.log((trigger_data[tmask] - data[3][tmask])/(trigger_data[tmask]-0.75*data[5][tmask]))/np.log((trigger_data[tmask]-data[2][tmask])/(trigger_data[tmask]-0.5*data[4][tmask]))
 
         waveno =  data[7][tmask][fill_mask]
         
@@ -149,19 +157,33 @@ class PlotsWidget(QtWidgets.QWidget):
         dayshift = int(self._mintime.hour+4 >23)
         
         lims = [self._mintime, datetime(self._mintime.year, self._mintime.month+mo_shift, self._mintime.day+dayshift, (self._mintime.hour+4) % 24)]
-        self.axes.set_xlim(lims)
+
+
 
         for _i in range(5):
             i = _i+1
             wavemask = waveno==i 
 #            self.axes.fill_between(lims, baseline[i]-0.02*baseline[i], baseline[i]+0.02*baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), zorder=i, alpha=0.3)
             self.axes.plot(dt_time[fill_mask][wavemask], (ratio[wavemask] - baseline[i])/baseline[i], color=get_color(i+1, 8, 'nipy_spectral_r'), label="{}nm".format(wavelens[i]), marker='d', ls='', zorder=10+i)
-        
+
         self.axes.vlines(puoff_time, -0.1, 0.1, color='gray', alpha=0.5, ls='--',label="Pump Off Time")
-        self.axes.hlines([-0.03, 0.03], lims[0], lims[1], color='red', ls='--')
+        self._putimes = len(puoff_time)
+        self.axes.hlines([-0.03, 0.03], datetime(year=2024,month=1,day=1), datetime(year=2027, month=1, day=1), color='red', ls='--')
         self.axes.set_xlabel("Time Stamp", size=14)
         self.axes.set_ylabel(r"Fractional Deviation", size=14)
-        self.axes.set_ylim([-0.10, 0.10])
+
+        if self._firstpt or self.ui.zoombut.isChecked():
+            self.axes.set_xlim(lims)
+            self.axes.set_ylim([-0.10, 0.10])
+        else:
+            self.axes.set_xlim(oldx)
+            self.axes.set_ylim(oldy)
+        
         self.axes.legend()
         self.ui.figure.autofmt_xdate()
         self.ui.canvas.draw()
+        if self._firstpt:
+            self._firstpt = False
+        
+
+
