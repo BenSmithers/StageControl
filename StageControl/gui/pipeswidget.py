@@ -546,6 +546,7 @@ class PipesWidget(QtWidgets.QWidget):
         pressures = data["pressure"]
         temperature = data["temperature"]
         waterlvl = data["waterlevel"]
+        light = data["light"]
 
         ### -------------------------------- UPDATE GUI --------------------------------
         flow_bar = np.array(flows)*100
@@ -565,13 +566,16 @@ class PipesWidget(QtWidgets.QWidget):
 
         self.ui.water_lvl1.setChecked(waterlvl[0])
         self.ui.water_lvl2.setChecked(waterlvl[1])
+        self.ui.lightlcdNumber.setText("{:.4f}".format(light[0]))
+        self.ui.lightlcdNumber_4.setText("{:.4f}".format(light[1]))
 
         # dump data to text file
         # Time, P0, P1, P2, P3, T1, T2, F1, F2, F3, F4, F5\n
         if not self._fake:
-            self._obj.write("{}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}\n".format(
+            self._obj.write("{}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.5f}, {:.5f}\n".format(
                 time(), pressures[0],pressures[1],pressures[2],pressures[3],temperature[0],temperature[1],
-                flow_bar[0],flow_bar[1],flow_bar[2],flow_bar[3],flow_bar[4]
+                flow_bar[0],flow_bar[1],flow_bar[2],flow_bar[3],flow_bar[4],
+                light[0],light[1]
             ))
             self._obj.flush()
 
@@ -907,6 +911,7 @@ class PipesWidget(QtWidgets.QWidget):
             if not self._wait:
                 # wait to resume flow until the open tank is drained
                 self.ui.pu1_button.setChecked(True)
+                # self.ui.bv1_button.setChecked(True)
                 self.ui.sv1_button.setChecked(True)
                 self.ui.sv2_button.setChecked(True)
                 self.ui.bv6_button.setChecked(True)

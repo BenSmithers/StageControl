@@ -212,30 +212,54 @@ class Ui_Form(object):
         spacerItem4 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.formLayout.setItem(13, QtWidgets.QFormLayout.FieldRole, spacerItem4)
 
+
+        self.light_1 = QtWidgets.QLabel(Form)
+        self.light_1.setObjectName("light_1")
+        self.light_1.setText("Monitor Light Level")
+        
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.LabelRole, self.light_1)
+        self.lightlcdNumber = QtWidgets.QLabel(Form)
+        self.lightlcdNumber.setObjectName("lightlcdNumber")
+        self.lightlcdNumber.setText("0.0")
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.lightlcdNumber)
+        self.light_2 = QtWidgets.QLabel(Form)
+        self.light_2.setObjectName("light_2")
+        self.light_2.setText("Receiver Light Level")
+        self.formLayout.setWidget(15, QtWidgets.QFormLayout.LabelRole, self.light_2)
+        self.lightlcdNumber_4 = QtWidgets.QLabel(Form)
+        self.lightlcdNumber_4.setObjectName("lcdNumber_4")
+        self.lightlcdNumber_4.setText("0.0")
+        self.formLayout.setWidget(15, QtWidgets.QFormLayout.FieldRole, self.lightlcdNumber_4)
+
+        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout.setItem(16, QtWidgets.QFormLayout.FieldRole, spacerItem5)
+
+
+
         self.water1_lbl = QtWidgets.QLabel(Form)
         self.water1_lbl.setObjectName("waterlbl1")
         self.water1_lbl.setText("Water Level 1")
         self.water1_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.formLayout.setWidget(14, QtWidgets.QFormLayout.LabelRole, self.water1_lbl)
+        self.formLayout.setWidget(17, QtWidgets.QFormLayout.LabelRole, self.water1_lbl)
         self.water_lvl1 = QtWidgets.QCheckBox(Form)
         self.water_lvl1.setObjectName("water_lvl1")
         self.water_lvl1.setEnabled(False)
 #        self.water_lvl1.setText("Water Level 1")
-        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.water_lvl1)
+        self.formLayout.setWidget(17, QtWidgets.QFormLayout.FieldRole, self.water_lvl1)
 
         self.water2_lbl = QtWidgets.QLabel(Form)
         self.water2_lbl.setObjectName("waterlbl2")
         self.water2_lbl.setText("Water Level 2")
         self.water2_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.formLayout.setWidget(15, QtWidgets.QFormLayout.LabelRole, self.water2_lbl)
+        self.formLayout.setWidget(18, QtWidgets.QFormLayout.LabelRole, self.water2_lbl)
         self.water_lvl2 = QtWidgets.QCheckBox(Form)
         self.water_lvl2.setObjectName("water_lvl2")
         self.water_lvl2.setEnabled(False)
 #        self.water_lvl2.setText("Water Level 2")
-        self.formLayout.setWidget(15, QtWidgets.QFormLayout.FieldRole, self.water_lvl2)
+        self.formLayout.setWidget(18, QtWidgets.QFormLayout.FieldRole, self.water_lvl2)
         
         spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.formLayout.setItem(16, QtWidgets.QFormLayout.FieldRole, spacerItem5)
+        self.formLayout.setItem(19, QtWidgets.QFormLayout.FieldRole, spacerItem5)
 
 
 
@@ -243,7 +267,8 @@ class Ui_Form(object):
 
         self.relaunch_button = QtWidgets.QPushButton(Form)
         self.relaunch_button.setText("Relaunch Interface")
-        self.formLayout.setWidget(17, QtWidgets.QFormLayout.FieldRole, self.relaunch_button)
+        self.relaunch_button.setEnabled(False)
+        self.formLayout.setWidget(20, QtWidgets.QFormLayout.FieldRole, self.relaunch_button)
         
 
         self.flow1.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
