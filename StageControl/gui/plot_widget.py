@@ -18,6 +18,36 @@ wavelens = [450, 410, 365, 295, 278, 255]
 baseline = [np.nan, 1.2548, 0.82710, 0.336267, 0.283956677, 0.2406189]
 baseline = [np.nan, 1.17566, 0.7802, 0.3149, 0.266777, 0.2183807]
 baseline = [np.nan, 1.1820821, 0.7887177, 0.3253037, 0.279768, 0.2285]
+baseline = [
+    np.nan, 1.14840897086328,0.7447017558664221,
+    0.2556593826546975, 0.1846610426449705, 0.10193979703149392
+]
+
+baseline = [
+    np.nan, 
+    1.1006778167145266,
+    0.6939987328288022,
+    0.17372054376604,
+    0.0995812003763459,
+    0.05400655458140932
+]
+baseline = [
+    np.nan,
+    1.0403869794773686,
+    0.6590904580273826,
+    0.12407494094631229,
+    0.07425881959242897,
+    0.04817418995625853
+]
+baseline=[
+        np.nan,
+        1.0142950284034045,
+        0.6780277132933905,
+        0.1620421248084486,
+        0.10100905864048944,
+        0.07819615737865969
+        ]
+
 import matplotlib.pyplot as plt 
 def get_color(n, colormax=3.0, cmap="viridis"):
     """
@@ -134,7 +164,8 @@ class PlotsWidget(QtWidgets.QWidget):
         # okay now we need a new one...
         pre_shift = int(dt_time[-1].hour<3)
         mo_shift = int( (dt_time[-1].day<2) and (pre_shift==1) ) # shifting a day back on the first of the month
-        self._mintime = datetime(dt_time[-1].year, dt_time[-1].month-mo_shift, dt_time[-1].day-pre_shift, (dt_time[-1].hour-2) % 24)
+        #self._mintime = datetime(dt_time[-1].year, dt_time[-1].month-mo_shift, dt_time[-1].day-pre_shift, (dt_time[-1].hour-2) % 24)
+        self._mintime = datetime.fromtimestamp(data[0][tmask][-1] - 2*3600)
         othermin = datetime(2020, 1, 1, 1)
         fill_mask = data[0][tmask] > int(othermin.timestamp())
 
@@ -156,7 +187,8 @@ class PlotsWidget(QtWidgets.QWidget):
          #self.axes.set_ylim([0, 1.0])
         dayshift = int(self._mintime.hour+4 >23)
         
-        lims = [self._mintime, datetime(self._mintime.year, self._mintime.month+mo_shift, self._mintime.day+dayshift, (self._mintime.hour+4) % 24)]
+        #lims = [self._mintime, datetime(self._mintime.year, self._mintime.month+mo_shift, self._mintime.day+dayshift, (self._mintime.hour+4) % 24)]
+        lims = [self._mintime, datetime.fromtimestamp(data[0][tmask][-1] +2*3600)]
 
 
 
