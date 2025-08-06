@@ -11,6 +11,7 @@ from warn_widg import WarnWidget
 from camera import CameraWorker
 import os 
 import time 
+import h5py as h5 
 
 # self.parent.scene.get_system(hid)
 from StageControl.ELLxControl import ELLxConnection
@@ -134,7 +135,14 @@ class main_window(QMainWindow):
         
 
         self.ui.refEdit.setText("")
-        
+
+    @pyqtSlot(dict)  
+    def save_waves(self, waveforms):
+        dfile = h5.File("./data/waveforms_{:.4f}.hdf5".format(time.time()), 'w') 
+        for key in waveforms:
+            dfile.create_dataset(key, data=waveforms[key])
+        dfile.close()
+
     def init_daq(self):
         try:
             self.daq_worker = DAQWorker(self._nopico)
@@ -145,11 +153,12 @@ class main_window(QMainWindow):
             self.daq_worker.message_signal.connect(self.thread_message)
             #self.daq_worker.refill_signal.connect(self.ui.pipes.refill_handler)
             self.daq_worker.initialized.connect(self.ui.control_widget.unlock)
+            self.daq_worker.waveforms.connect(self.save_waves)
             #self.ui.pipes.refill_complete.connect(self.daq_worker.refill_complete)
             self.ui.control_widget.done_signal.connect(self.daq_worker.measure)
             self.ui.control_widget.start_signal.connect(self.daq_worker.start_data_taking)
             self.ui.control_widget.stop_signal.connect(self.daq_worker.stop_data_taking)
-            self.ui.control_widget.ui.gain_button.clicked.connect(self.daq_worker.gain_run)
+            self.ui.control_widget.ui.gain_button.clicked.connect(self.daq_worker.get_waves)
             self.initialize_daq.connect(self.daq_worker.initialize)
             self.initialize_daq.emit()
             if self._nopico:

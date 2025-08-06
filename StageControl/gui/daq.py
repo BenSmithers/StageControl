@@ -22,6 +22,7 @@ class DAQWorker(QObject):
     data_recieved = pyqtSignal(int, int, int, int, int, int)
     message_signal = pyqtSignal(str)
     initialized = pyqtSignal()
+    waveforms = pyqtSignal(dict)
     
     def __init__(self, nopico=False):
         super(QObject, self).__init__()
@@ -49,6 +50,17 @@ class DAQWorker(QObject):
         self._running = False
         self._timer.timeout.connect(self.measure)
     
+    @pyqtSlot()
+    def get_waves(self):
+        self.message_signal.emit("Ignoring WF request")
+        adc2mVChAMax, adc2mVChBMax, adc2mVChDMax  = self._pico.measure(True)
+        data_dict = {
+            "trigger":adc2mVChAMax,
+            "monitor":adc2mVChBMax, 
+            "receiver":adc2mVChDMax
+        }
+        self.waveforms.emit(data_dict)
+
     @pyqtSlot()
     def initialize(self):
         if self._nopico:
@@ -112,6 +124,10 @@ class DAQWorker(QObject):
 
             if self._is_striping and self._running:
                 self.data_recieved.emit(self._waves[self._wave_ind], trig, mon, rec, mon_dark, rec_dark)
+
+                grab_waves = (mon_dark/trig > 0.02 or rec_dark/trig > 0.02) and self._waves[self._wave_ind]==-1
+                if grab_waves:
+                    self.get_waves()
                 self._wave_ind+=1
                 self._wave_ind = self._wave_ind % len(self._waves)
 
