@@ -150,7 +150,7 @@ class Ui_Widget(object):
 
         self.gain_button = QtWidgets.QPushButton(Widget)
         self.gain_button.setObjectName("gain_button")
-        self.gain_button.setText("Write Gain File")
+        self.gain_button.setText("Write Waveform File")
         self.formLayout.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.gain_button)
 
 

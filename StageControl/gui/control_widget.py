@@ -46,14 +46,14 @@ class ControlWidget(QtWidgets.QWidget):
 
         self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
 
+        # l7 is 40 
         self._led_locations = [
-            8.5*i for i in range(7)
+            8.5*i-11 for i in range(7)
         ]
-        self._led_locations = [x -1.0 for x  in self._led_locations]
-        self._led_locations.append(8.74)
-        self._led_locations.append(51.24)
-        self._led_locations[0] = 0.02
-        self._led_locations[1] = 7.57
+
+        self._led_locations.append(35.5-(6*8.5)) # align 1
+        self._led_locations.append(35.5) # align 2
+        print(self._led_locations)
         self._adcs= [
                 720,
                 842,
