@@ -51,6 +51,7 @@ class ELLxConnection:
 
             time.sleep(0.5)
             self._con.reset_input_buffer()
+            self.set_velocity(80)
 
     def _send_and_receive(self, this_call:message.Call, *args):
         """
@@ -65,15 +66,12 @@ class ELLxConnection:
             raw_response = self._con.readline()
             resp = message.response_handler(raw_response)
         else:
-            print(args)
             if len(args)==0:
                 raw_response = b"0HO"+ _encode_signed_long(2, 8)
                 resp = message.response_handler(raw_response)
             else:    
                 raw_response = b"0PO"+ _encode_signed_long(args[0], 8)
                 resp = message.response_handler(raw_response)
-
-
 
 
         data = {
@@ -85,7 +83,7 @@ class ELLxConnection:
             return data
 
         if resp[1]=="GS":
-            code = int(resp[-1])
+            code = int(resp[-1],16)
             this_stat = Status(code)
             if code!=0:
                 print("Status : {}".format(this_stat))
@@ -130,3 +128,9 @@ class ELLxConnection:
         return self._send_and_receive(message.GetVeolicty)
     def stop(self):
         return self._send_and_receive(message.Stop)
+    def request_status(self):
+        return self._send_and_receive(message.RequestStatus)
+    def request_motor_info(self):
+        return self._send_and_receive(message.RequestMotorInfo)
+    def search_frequency(self):
+        return self._send_and_receive(message.SearchFreq)
