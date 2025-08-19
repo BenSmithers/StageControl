@@ -228,7 +228,6 @@ class main_window(QMainWindow):
             self.worker_thread.moveToThread(self.thread_man)
             # connections 
             self.initialize.connect(self.worker_thread.initialize)
-            self.ui.pipes.update_plot_signal.connect(self.ui.history.update_plots)
             self.worker_thread.data_signal.connect(self.ui.pipes.data_received)
             self.ui.pipes.pump_signal.connect(self.worker_thread.pump)
             self.ui.pipes.wait_signal.connect(self.worker_thread.wait)
