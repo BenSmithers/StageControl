@@ -36,7 +36,7 @@ def response_handler(full_response:bytes):
     this_key = full_response[1:3].decode()
 
     if this_key not in message_map.keys():
-        raise KeyError("Unsure how to handle key {}".format(this_key))
+        raise KeyError("Unsure how to handle key {} in message {}".format(this_key, full_response))
     else:
         return message_map[this_key].decode(full_response)
 
@@ -46,6 +46,7 @@ class DecoderType(Enum):
     Word=0
     SignedLong=1
     UnsignedLong=2 
+    Frequency=3
 
 def _decode_word(reply:bytes)->str:
     return reply.decode()
@@ -89,6 +90,21 @@ def _encode_unsigned_long(value:int, nbytes:int)->str:
 def _decode_unsigned_long(reply:bytes):
     return int(reply.decode(), 16)
 
+def _decode_frequency(word:bytes):
+    """
+        Trim the leading eight...
+    """ 
+    return int(word[1:],16)
+def _encode_frequency(value:int, _nbytes):
+    """
+       The most significant bit of the period must be set to '8'
+       Then it's just regular hex stuff  
+    """
+    nbytes = _nbytes - 1
+    raw_hex = hex(value)[2:].upper()
+    encoding = ('8' + "0"*(nbytes-len(raw_hex)) + raw_hex).upper().encode() 
+    return encoding
+
 def decode(sub_val:bytes, dt:DecoderType):
     if dt.value == DecoderType.Word.value:
         return _decode_word(sub_val)
@@ -96,6 +112,8 @@ def decode(sub_val:bytes, dt:DecoderType):
         return _decode_unsigned_long(sub_val) 
     elif dt.value == DecoderType.SignedLong.value:
         return _decode_signed_long(sub_val) 
+    elif dt.value == DecoderType.Frequency.value:
+        return _decode_frequency(sub_val)
     else:
         raise NotImplementedError("Unknown decoder type: {}".format(dt))
 
@@ -110,6 +128,8 @@ def encode(sub_val, dt:DecoderType, nbytes=-1)->str:
         return _encode_unsigned_long(sub_val, nbytes) 
     elif dt.value == DecoderType.SignedLong.value:
         return _encode_signed_long(sub_val, nbytes) 
+    elif dt.value == DecoderType.Frequency.value:
+        return _encode_frequency(sub_val, nbytes)
     else:
         raise NotImplementedError("Unknown decoder type: {}".format(dt))  
 
@@ -224,7 +244,54 @@ class VelocityResponse(Response):
         [2, DecoderType.UnsignedLong]
     ]
 
+class MotorInfo(Response):
+    key ="I1"
+    reply=Response.reply+[ 
+        [1, DecoderType.Word],#reserved
+        [1, DecoderType.Word], #Motor 
+        [4, DecoderType.UnsignedLong], # current (why is this a word??)
+        [4, DecoderType.Word], # reserved
+        [4, DecoderType.Word], # reserved
+        [4, DecoderType.Frequency], # forward period
+        [4, DecoderType.Frequency], # backward period
+    ]
+
+class MotorInfo2(Response):
+    key ="I2"
+    reply=Response.reply+[ 
+        [1, DecoderType.Word],#reserved
+        [1, DecoderType.Word], #Motor 
+        [4, DecoderType.Word], # current (why is this a word??)
+        [4, DecoderType.Word], # reserved
+        [4, DecoderType.Word], # reserved
+        [4, DecoderType.Frequency], # forward period
+        [4, DecoderType.Frequency], # backward period
+    ]
+
+class CurrentCurve(Response):
+    key="C1"
+    reply = Response.reply + [
+        [519, DecoderType.Word]
+    ]
+
+class ButtonStatus(Response):
+    key="BS"
+    reply = Response.reply + [
+        [2, DecoderType.Word]
+    ]
+
+class ButtonPosition(Response):
+    key="BO"
+    reply = Response.reply + [
+        [8, DecoderType.SignedLong]
+    ]
+
+
+
 # ======================== CALLS ===================
+class RequestMotorInfo(Call):
+    key="i1"
+
 class RequestStatus(Call):
     key="gs"
 class RequestInfo(Call):
@@ -236,13 +303,9 @@ class Isolate(Call):
     args=[
         [2, DecoderType.UnsignedLong]
     ]
-class SetHome(Call):
-    key="so"
-    args=[
-        [8, DecoderType.SignedLong]
-    ]
+
 class GoHome(Call):
-    key = "go"
+    key = "ho"
 class RequestPosition(Call):
     key="gp"
 class SetJog(Call):
@@ -275,3 +338,7 @@ class SetVelocity(Call):
     ]
 class Stop(Call):
     key="st"
+class SearchFreq(Call):
+    key="s1"
+class OptimizeMotors(Call):
+    key="om"
