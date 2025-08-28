@@ -144,7 +144,7 @@ class PipesWidget(QtWidgets.QWidget):
         DFILE = os.path.join(os.path.dirname(__file__), "data", "data_history.csv")
         if not os.path.exists(DFILE):
             self._obj = open(DFILE, 'wt')
-            self._obj.write("# Time, P0, P1, P2, P3, T1, T2, F1, F2, F3, F4, F5\n")
+            self._obj.write("# Time, P0, P1, P2, P3, T1, T2, T3, F1, F2, F3, F4, F5\n")
         else:
             self._obj = open(DFILE, 'a')
 
@@ -558,6 +558,7 @@ class PipesWidget(QtWidgets.QWidget):
 
         self.ui.temp_value_1.setText("{:.2f}".format(temperature[0]))
         self.ui.temp_value_2.setText("{:.2f}".format(temperature[1]))
+        self.ui.temp_value_3.setText("{:.2f}".format(temperature[2]))
 
         self.ui.lcdNumber.setText("{:.2f}".format(pressures[0]))
         self.ui.lcdNumber_4.setText("{:.2f}".format(pressures[1]))
@@ -572,8 +573,8 @@ class PipesWidget(QtWidgets.QWidget):
         # dump data to text file
         # Time, P0, P1, P2, P3, T1, T2, F1, F2, F3, F4, F5\n
         if not self._fake:
-            self._obj.write("{}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.5f}, {:.5f}\n".format(
-                time(), pressures[0],pressures[1],pressures[2],pressures[3],temperature[0],temperature[1],
+            self._obj.write("{}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.5f}, {:.5f}\n".format(
+                time(), pressures[0],pressures[1],pressures[2],pressures[3],temperature[0],temperature[1],temperature[2],
                 flow_bar[0],flow_bar[1],flow_bar[2],flow_bar[3],flow_bar[4],
                 light[0],light[1]
             ))
@@ -624,7 +625,8 @@ class PipesWidget(QtWidgets.QWidget):
         ])
         temperature = np.array([
             float(self.ui.temp_value_1.text()),
-            float(self.ui.temp_value_2.text())
+            float(self.ui.temp_value_2.text()),
+            float(self.ui.temp_value_3.text())
         ])
 
         self._alarm = pressures>PRESSURE_THRESH # all of the pressures 
@@ -928,7 +930,7 @@ class PipesWidget(QtWidgets.QWidget):
                     self._wait = True 
         else:
             self._leveltime = -1
-        if self.ui.pu1_button.isChecked() and (not flows[0]):
+        if self.ui.pu1_button.isChecked() and (not flows[0]) and (not self._filling_osmo):
             # pump on but no flow 
             if self._noflotime == -1:
                 self._noflotime = time() 
