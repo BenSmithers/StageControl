@@ -16,6 +16,7 @@ from control_widget import ControlWidget
 from pipeswidget import PipesWidget
 from camera import Camera
 from history_widget import HistoryWidget
+from hv_widget import HVWidget
 
 class LineEdit(QtWidgets.QLineEdit):
     doubleClicked = QtCore.pyqtSignal()
@@ -46,8 +47,13 @@ class Ui_MainWindow(object):
         self.control_widget = ControlWidget(self.controlTab)
         self.control_widget.setObjectName("controlinst")
 
+        self.hv_widget = HVWidget(self.controlTab)
+        self.hv_widget.setObjectName("hv_widget")
+
         self.verticalLayout_2.addWidget(self.control_widget)
+        
         self.tabWidget.addTab(self.controlTab, "")
+        self.tabWidget.addTab(self.hv_widget, "HV Config")
         self.plotTab = QtWidgets.QWidget()
         self.plotTab.setObjectName("plotTab")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.plotTab)

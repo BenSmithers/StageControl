@@ -38,12 +38,12 @@ class HVBoxWorker(QObject):
 
     @pyqtSlot()
     def power_on(self):
-        self.messager.emit("Turning ON")
+        self.messager.emit("HV ON")
         self._caen_box.turn_on() 
 
     @pyqtSlot()
     def power_off(self):
-        self.messager.emit("Turning OFF")
+        self.messager.emit("HV OFF")
         self._caen_box.turn_off() 
 
     @pyqtSlot()
