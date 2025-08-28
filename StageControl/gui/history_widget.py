@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QWidget, QDialog
 from PyQt5.QtCore import pyqtSlot
 import numpy as np 
-
+import os 
 import matplotlib.pyplot as plt
 def get_color(n, colormax=3.0, cmap="viridis"):
     """
@@ -26,13 +26,17 @@ class HistoryWidget(QtWidgets.QWidget):
 
     @pyqtSlot()
     def update_plots(self):
+        if not os.path.exists(self._filepath):
+            return 
+        
         if not (self._firstpt):
             oldx = self.axes[0].get_xlim()
             oldy = self.axes[0].get_ylim()
             oldy2 = self.twax.get_ylim()
 
         data = np.loadtxt(self._filepath, delimiter=',').T
-
+        if len(data)==0:
+            return 
         times = data[0]
         times = -(np.max(times) - times)/3600
 
@@ -42,11 +46,11 @@ class HistoryWidget(QtWidgets.QWidget):
         p2 = data[2][mask]
         p3 =  data[3][mask]
         p4 =  data[4][mask]
-        f1 = data[7][mask]
-        f2 = data[8][mask]
-        f3 = data[9][mask]
-        f4 = data[10][mask]
-        f5 = data[11][mask]
+        f1 = data[8][mask]
+        f2 = data[9][mask]
+        f3 = data[10][mask]
+        f4 = data[11][mask]
+        f5 = data[12][mask]
         temperature =  data[5][mask]
         times = times[mask]
 
