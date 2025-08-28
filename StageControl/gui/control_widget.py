@@ -47,20 +47,26 @@ class ControlWidget(QtWidgets.QWidget):
         self._logfile = os.path.join(os.path.dirname(__file__), "data","command.log")
 
         # l7 is 40 
+        # l1 is 13 
+        #self._led_locations = [
+        #    8.5*i+4.5 for i in range(7)
+        #]
+
         self._led_locations = [
-            8.5*i-11 for i in range(7)
+            8.5*i+3.75 for i in range(7)
         ]
 
-        self._led_locations.append(35.5-(6*8.5)) # align 1
-        self._led_locations.append(35.5) # align 2
+        self._led_locations.append(43.8-(5*8.5)) # align 1
+
+        self._led_locations.append(43.8) # align 2
         print(self._led_locations)
         self._adcs= [
-                720,
-                842,
-                764,
-                632,
-                801,
-                818
+                810, # 450 
+                917, # 410 
+                852, # 365
+                682, # 295
+                826, # 255
+                818 # 235
                 ]
 
         self._button_timer =  QtCore.QTimer(self)
