@@ -16,7 +16,68 @@ import h5py as h5
 # self.parent.scene.get_system(hid)
 from StageControl.ELLxControl import ELLxConnection
 from StageControl.LEDControl import LEDBoard
+from StageControl.CAENControl import CAENBox, Status
+
+from constants import HV_ONE, HV_TWO
+
 from daq import DAQWorker
+
+class HVBoxWorker(QObject):
+    readV = pyqtSignal(float)
+    readI = pyqtSignal(float)
+    readStat = pyqtSignal(Status)
+    messager = pyqtSignal(str)
+    readVSet = pyqtSignal(float)
+    readISet = pyqtSignal(float)
+
+    def __init__(self, usb_port):
+        super(QObject, self).__init__() 
+        self._usb_port = usb_port
+        self._caen_box = CAENBox(self._usb_port)
+
+
+    @pyqtSlot()
+    def power_on(self):
+        self.messager.emit("Turning ON")
+        self._caen_box.turn_on() 
+
+    @pyqtSlot()
+    def power_off(self):
+        self.messager.emit("Turning OFF")
+        self._caen_box.turn_off() 
+
+    @pyqtSlot()
+    def initialize(self):
+        self._read_v_setting()
+        self._read_i_setting()
+        self.update()
+        self.messager.emit("Initilized HV Box")
+
+    def update(self):
+        self._read_voltage()
+        self._read_current()
+        self._read_status()
+
+    def _read_v_setting(self):
+        self.readVSet.emit((float(self._caen_box.read_vset()["value"])))
+    def _read_i_setting(self):
+        self.readISet.emit((float(self._caen_box.read_iset()["value"])))
+
+    def _read_voltage(self):
+        self.readV.emit(float(self._caen_box.read_voltage()["value"]))
+    def _read_current(self):
+        self.readI.emit(float(self._caen_box.read_current()["value"]))
+
+    @pyqtSlot(float)
+    def set_voltage(self, new_v):
+        self.messager.emit("Setting to {:.3f}".format(new_v))
+        self._caen_box.set_voltage(new_v)
+
+    @pyqtSlot()
+    def _read_status(self):
+        status = self._caen_box.read_state()
+        self.readStat.emit(status)
+
 
 class USBWorker(QObject):
     ELLxSignal = pyqtSignal(dict)
@@ -34,8 +95,9 @@ class USBWorker(QObject):
     @pyqtSlot()
     def initialize(self):
         self._conn = ELLxConnection(self._stage_path, fake=self._fake)
-        self._conn.go_home()
+        self._conn.move_absolute(30)
         self._board = LEDBoard(self._led_path, fake=self._fake)
+        self._board.disable()
         self._board.enable()
         self._board.set_int_trigger()
         self._board.set_fast_rate()
@@ -94,6 +156,7 @@ class main_window(QMainWindow):
     initialize_usb = pyqtSignal()
     initialize_daq = pyqtSignal()
     killConnection = pyqtSignal()
+    initialize_hv = pyqtSignal()
     
     reinitialize = pyqtSignal()
     def __init__(self,parent=None, fake=False, nopico = False):
@@ -123,6 +186,17 @@ class main_window(QMainWindow):
         self.daq_threadman.start()
         self.init_daq()
 
+        self.hv_timer = QtCore.QTimer(self)
+        self.hv_timer.setInterval(5000)
+        
+        self.hv_threadman_one = QThread()
+        self.hv_threadman_one.start()
+        self.hv_threadman_two = QThread()
+        self.hv_threadman_two.start()
+        self.init_hv()
+        self.hv_timer.start()
+
+
         self.ui.pipes.refill_complete.connect(self.ui.plot_widg.update_filltime)
 
         self.setWindowTitle("WMS Control System")
@@ -142,6 +216,47 @@ class main_window(QMainWindow):
         for key in waveforms:
             dfile.create_dataset(key, data=waveforms[key])
         dfile.close()
+
+    def init_hv(self):
+        try:
+            self.worker_one = HVBoxWorker(HV_ONE)
+            self.worker_one.moveToThread(self.hv_threadman_one)
+            
+            self.worker_one.readV.connect(self.ui.hv_widget.hvboxone.setReadVoltage)
+            self.worker_one.readI.connect(self.ui.hv_widget.hvboxone.setReadCurrent)
+            self.worker_one.readStat.connect(self.ui.hv_widget.hvboxone.setStatus)
+            self.worker_one.readISet.connect(self.ui.hv_widget.hvboxone.setSetI)
+            self.worker_one.readVSet.connect(self.ui.hv_widget.hvboxone.setSetV)
+            self.ui.hv_widget.hvboxone.set_voltage.connect(self.worker_one.set_voltage)
+            self.ui.hv_widget.hvboxone.ui.on_button.clicked.connect(self.worker_one.power_on)
+            self.ui.hv_widget.hvboxone.ui.off_button.clicked.connect(self.worker_one.power_off)
+            self.worker_one.messager.connect(self.thread_message)
+            self.initialize.connect(self.worker_one.initialize)
+
+            self.worker_two = HVBoxWorker(HV_TWO)
+            self.worker_two.moveToThread(self.hv_threadman_two)
+            self.worker_two.readV.connect(self.ui.hv_widget.hvboxtwo.setReadVoltage)
+            self.worker_two.readI.connect(self.ui.hv_widget.hvboxtwo.setReadCurrent)
+            self.worker_two.readISet.connect(self.ui.hv_widget.hvboxtwo.setSetI)
+            self.worker_two.readVSet.connect(self.ui.hv_widget.hvboxtwo.setSetV)
+            self.worker_two.readStat.connect(self.ui.hv_widget.hvboxtwo.setStatus)
+            self.ui.hv_widget.hvboxtwo.set_voltage.connect(self.worker_two.set_voltage)
+            self.ui.hv_widget.hvboxtwo.ui.on_button.clicked.connect(self.worker_two.power_on)
+            self.ui.hv_widget.hvboxtwo.ui.off_button.clicked.connect(self.worker_two.power_off)
+            self.worker_two.messager.connect(self.thread_message)
+            self.initialize.connect(self.worker_two.initialize)
+
+            self.hv_timer.timeout.connect(self.worker_one.update)
+            self.hv_timer.timeout.connect(self.worker_two.update)
+
+            self.initialize.emit()
+
+        except Exception as e:
+            self.dialog = WarnWidget(parent=self, message="Critical Error {}".format(e))
+            self.dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            self.dialog.ui.buttonBox.helpRequested.connect(self.ui.control_widget.help)
+            self.dialog.exec_()  
+            sys.exit(1)
 
     def init_daq(self):
         try:
