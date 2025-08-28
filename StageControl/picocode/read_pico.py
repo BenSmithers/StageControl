@@ -9,13 +9,12 @@ import matplotlib.pyplot as plt
 from picosdk.functions import adc2mV, assert_pico_ok, PICO_STATUS_LOOKUP
 import time
 from scipy.signal import find_peaks
-from StageControl.picocode.utils import get_valid, get_cfd_time
+from StageControl.picocode.utils import get_valid, get_cfd_time, count_hits
 import json 
 from picosdk.PicoDeviceEnums import picoEnum
 
 thresh = 10
-bped = -0.55
-dped = -1.0
+
 
 channelInputRanges = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000]
 def adc2mV(buffer, rang, maxADC):
@@ -37,9 +36,11 @@ def fold_min(thisdat, nmerge=370):
 class PicoMeasure:
     def __init__(self, block_mode = False):
         self.nextSample = 0
+        self.bped = 0 # 1.54
+        self.dped = 0 # 3.54 -0.5
         self.autoStopOuter = False
         self.wasCalledBack = False
-        self._initialized = True
+        self._initialized = False
         self._block_mode = block_mode
         print("In {} mode".format("block" if block_mode else "stream"))
         self.collection_time = 30
@@ -232,17 +233,6 @@ class PicoMeasure:
             assert_pico_ok(status)
             status=ps.ps3000aSetNoOfCaptures(self.chandle, n_segments)
     
-
-    def initialze(self):
-        self._initialized = True 
-        return 
-        chana, chanb, chand = self.measure(True)
-        bad = np.min(chana)>=0
-        self._good = not bad 
-        self.bped = np.mean(chanb)
-        self.dped = np.mean(chand)
-        self._initialized = True # and (self._good)
-    
     def close(self):
                 
         # Stop the scope
@@ -265,7 +255,7 @@ class PicoMeasure:
         """
         trigger, chanb, chand = self.measure(True)
         #time_sample = np.linspace(0, (self.totalSamples - 1) * self.sampleIntervalNs, self.totalSamples)
-        bins = np.linspace(0, 201, 129)
+        bins = np.linspace(0, 200, 128)
         
         if hack:
             mon_peaks = -1*fold_min(chanb, nmerge=370)
@@ -288,10 +278,12 @@ class PicoMeasure:
             for ic in crossings:
                 if len(chanb[ic+skip:ic+window])==0:
                     continue
-                mon_peaks.append(-1*np.min(chanb[ic+skip:ic+window]))
-                rec_peaks.append(-1*np.min(chand[ic+skip:ic+window]))
+                #print(window*np.sum(chanb[ic+360:ic+window])/10)
+                mon_peaks.append(-1*np.min(chanb[ic+skip:ic+window]) + np.mean(chanb[ic+window-10:ic+window]))
+                rec_peaks.append(-1*np.min(chand[ic+skip:ic+window]) + np.mean(chand[ic+window-10:ic+window]) )
 
-    
+        print(np.mean(mon_peaks))
+        print(np.mean(rec_peaks))
         mon_data = np.histogram(mon_peaks, bins)[0]
         rec_data = np.histogram(rec_peaks, bins)[0]
 
@@ -368,32 +360,21 @@ class PicoMeasure:
             if raw_dat:
                 return self.bufferAMax, self.bufferBMax, self.bufferDMax     
         adc2mVChAMax = adc2mV(self.bufferAMax, self.channel_range, maxADC)
-        adc2mVChBMax = adc2mV(self.bufferBMax, self.ch_range_2, maxADC)
-        adc2mVChDMax = adc2mV(self.bufferDMax, self.ch_range_3, maxADC)
+        adc2mVChBMax = adc2mV(self.bufferBMax, self.ch_range_2, maxADC) -self.bped
+        adc2mVChDMax = adc2mV(self.bufferDMax, self.ch_range_3, maxADC) -self.dped
         if give_waves:
             return adc2mVChAMax, adc2mVChBMax, adc2mVChDMax 
 
         time_sample = np.linspace(0, (self.totalSamples - 1) * self.actualSampleIntervalNs, self.totalSamples)
 
         t1 = time.time()
-        ctime = get_cfd_time(time_sample, adc2mVChAMax, 1000,auto_adjust_ped=False, use_rise=True)[0]
+        ctime, trig_bin = get_cfd_time(time_sample, adc2mVChAMax, 1000,auto_adjust_ped=False, use_rise=True)
         ntrig = len(ctime)
-        
-        t2 = time.time()
-        montime = get_cfd_time(time_sample, -adc2mVChBMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
-        is_good, is_bad = get_valid(ctime, montime, False)
-        nmon = np.sum(is_good)
-        #mon_bad = np.sum(is_bad)#*self.mon_lt_good/(1-self.mon_lt_good)
-        mon_bad = np.sum(get_valid(ctime, montime,  False, invalid=True)[0])
-        t3 = time.time()
-        rectime = get_cfd_time(time_sample, -adc2mVChDMax, thresh,auto_adjust_ped= True, use_rise=False)[0]
-        is_good, is_bad = get_valid(ctime, rectime, True)
-        nrec = np.sum(is_good)
-        t4 = time.time()
-
-#        print(t2-t1, t3-t2, t4-t3, "seconds")
-        #rec_bad = np.sum(is_bad)# *self.rec_lt_good/(1-self.rec_lt_good)
-        rec_bad = np.sum(get_valid(ctime, rectime, True, invalid=True)[0])
+       
+        nmon = count_hits(trig_bin,adc2mVChBMax, thresh,True,  90, False)
+        nrec = count_hits(trig_bin,adc2mVChDMax, thresh,False, 90, False)
+        mon_bad = count_hits(trig_bin,adc2mVChBMax, thresh,True,  90, True)
+        rec_bad = count_hits(trig_bin,adc2mVChDMax, thresh,False, 90, True)
 
         return ntrig, nmon, nrec, mon_bad, rec_bad
 
@@ -413,9 +394,9 @@ class PicoMeasure:
         autoStopOn = 1
         # No downsampling:
         downsampleRatio = 1
-        self.bufferCompleteA = np.zeros(shape=self.totalSamples.value, dtype=np.int16)
-        self.bufferCompleteB = np.zeros(shape=self.totalSamples.value, dtype=np.int16)
-        self.bufferCompleteD = np.zeros(shape=self.totalSamples.value, dtype=np.int16)
+        self.bufferCompleteA = np.zeros(shape=self.totalSamples, dtype=np.int16)
+        self.bufferCompleteB = np.zeros(shape=self.totalSamples, dtype=np.int16)
+        self.bufferCompleteD = np.zeros(shape=self.totalSamples, dtype=np.int16)
         import time 
         loops = 0
         collection_start = time.time()
